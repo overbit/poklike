@@ -68,7 +68,7 @@ async function run(){
  verify(strokes>=1,'real pointer drag creates a saved drawing');
  await snapshot('drawing-desktop');
  await send('Page.reload');
- await until(`document.querySelectorAll('[data-toy]').length===25`,'reload');
+ await until(`document.querySelector('[data-stage]')?.dataset.stage==='drawing'`,'reload drawing deep link');
  await evaluate(`location.hash='#/toy/drawing'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='drawing'`,'saved drawing');
  verify(await evaluate(`document.querySelector('[data-stage]').querySelectorAll('path[stroke]').length>0 && JSON.parse(localStorage.getItem('poklike-state-v1')).drawing.strokes.length>0`),'drawing survives a full page reload');
  await evaluate(`document.querySelector('[data-reset]').click()`);
@@ -87,6 +87,8 @@ async function run(){
  verify(await evaluate(`JSON.parse(localStorage.getItem('poklike-prefs-v1')).sound===false`),'parent sound preference persists');
  await evaluate(`document.querySelector('[data-close]').click()`);
  // Verify full offline reopen *after* initial installation.
+ await evaluate(`location.hash='#/'`);
+ await until(`document.querySelectorAll('[data-toy]').length===25`,'gallery before offline');
  await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
  await send('Page.reload');await until(`document.querySelectorAll('[data-toy]').length===25`,'offline gallery',100);
  verify(await evaluate(`document.querySelectorAll('[data-toy]').length===25`),'collection opens with network disabled');
