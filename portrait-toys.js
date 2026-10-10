@@ -233,9 +233,9 @@ function town(s){
  }).join('');
  const vehicle=toPortrait(s.vehicle);
  const carX=Math.max(90,Math.min(384,vehicle.x));
- const carY=Math.max(633,Math.min(716,vehicle.y));
+ const carY=Math.max(194,Math.min(716,vehicle.y));
  const visitors=s.people.slice(0,6).map((p,i)=>{
-  const at=toPortrait(p),x=Math.max(62,Math.min(421,at.x)),y=Math.max(609,Math.min(700,at.y));
+  const at=toPortrait(p),x=Math.max(62,Math.min(421,at.x)),y=Math.max(194,Math.min(700,at.y));
   return drag(`person:${i}`,x,y,`<g transform="scale(1.18)">${miniPerson(0,0,colors[(i+2)%6])}</g>${c(0,0,56,'transparent')}`,`Move neighbor ${i+1} to a place`);
  }).join('');
  const car=drag('vehicle',carX,carY,
