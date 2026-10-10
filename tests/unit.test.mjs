@@ -46,7 +46,7 @@ test('world puzzle snaps close enough tiles into intended slot',()=>{
  assert.equal(s.tiles[0].x,244);assert.equal(s.tiles[0].y,151);
 });
 
-import {renderPortraitToy,portraitFrame,toPortrait,toModel} from '../portrait-toys.js';
+import {renderPortraitToy,portraitFrame,toPortrait,toModel,portraitDragToModel,PORTRAIT_DRAG_LIFT} from '../portrait-toys.js';
 for(const toy of toys){
  test(`${toy.title} has a portrait scene with direct interactive targets`,()=>{
   const art=renderPortraitToy(toy.id,initialState(toy.id));
@@ -58,6 +58,32 @@ for(const toy of toys){
 }
 test('model and portrait coordinates round-trip for touch drag and drawing',()=>{
  const a={x:400,y:320};const b=toPortrait(a);assert.deepEqual(toModel(b),a);
+});
+test('all lifted portrait drags round-trip without jumping',()=>{
+ const inputs=[
+  ['house','figure',s=>s.figure],['islands','boat',s=>s.boat],
+  ['silly-blocks','block:0',s=>s.blocks[0]],['world-puzzle','tile:0',s=>s.tiles[0]],
+  ['dinosaurs','dino',s=>s.dino],['geometry','piece:0',s=>s.pieces[0]],
+  ['space','rocket',s=>s.rocket]
+ ];
+ assert.equal(inputs.length,Object.keys(PORTRAIT_DRAG_LIFT).length);
+ for(const [id,key,read] of inputs){
+  const target={x:220,y:555},model=portraitDragToModel(id,target),state=initialState(id);
+  assert.equal(moveDrag(id,state,key,model.x,model.y),true,id);
+  const at=toPortrait(read(state));
+  assert.ok(Math.abs(at.x-target.x)<1,id+' x jumped');
+  assert.ok(Math.abs(at.y+PORTRAIT_DRAG_LIFT[id]-target.y)<1,id+' y jumped');
+ }
+});
+test('portrait puzzle slots match the shared snap locations',()=>{
+ const state=initialState('world-puzzle');
+ for(let i=0;i<6;i++){
+  const tx=244+(i%3)*233,ty=151+Math.floor(i/3)*162;
+  assert.equal(moveDrag('world-puzzle',state,'tile:'+i,tx+12,ty+8),true);
+  assert.deepEqual({x:state.tiles[i].x,y:state.tiles[i].y},{x:tx,y:ty});
+ }
+ const artwork=renderPortraitToy('world-puzzle',state).art;
+ assert.match(artwork,/data-drag="tile:5"/);
 });
 test('Busy Board dials support repeatable tactile interactions',()=>{
  const st=initialState('busy-board');const before=st.dials[0];interact('busy-board',st,'dial:0');
