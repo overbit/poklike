@@ -1,7 +1,0 @@
-node_modules/
-.expo/
-dist-android/
-dist-ios/
-android/
-ios/
-*.log
