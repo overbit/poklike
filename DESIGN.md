@@ -15,4 +15,5 @@ Toy tiles of varied sizes form a tabletop. Inside an activity all app controls a
 ## Responsiveness
 - Desktop: staggered multi-column collection and centered landscape stage.
 - Tablet: landscape-first stage, 3–4 columns in gallery.
-- Mobile: 2-column gallery, large header controls, game stage auto-scales with optional device rotation tip; active controls stay touch-size.
+- Mobile web: immersive fixed viewport with edge-to-edge stage; an adaptive SVG camera expands the scene to full screen and supports panning / 'See all'. Controls float above the art, avoiding browser chrome and device safe areas.
+- Native iOS and Android: native-stack navigation (iOS swipe-back and Android system Back), full-screen native SVG scenes, native modal adult controls, minimum 48dp touch targets, safe-area-aware overlays, and bundled offline sounds.
