@@ -38,3 +38,5 @@ Shell: PWA install, full-cache service worker verification, offline deep-link re
 2026-10-10 | Busy Board / Busy Book | Meshing gears, powered indicator, independently operable sliders, illustrated book discoveries, reversible touch changes and swipe/keyboard page turns. **Partial** against commercial reference.
 2026-10-10 | Musical Blobs / Town | Four distinct playable instrument shapes with collision chords and four large touchable town venues with draggable visitors. **Partial** against commercial reference.
 2026-10-10 | Source limitation | V01/V02 YouTube frames unavailable to the execution environment; exact footage matching not asserted. Android/iOS real-hardware checks still pending.
+
+2026-10-10 | Batched browser visual QA | Reviewed screenshots of 390×844 portrait Cooking/Busy Board/Busy Book/Town/Puzzle, landscape Cooking, and the collection. Addressed blank featured Drawing gallery preview and World Puzzle tray/control overlap with original illustrative art. Screenshot evidence comes from Chromium device emulation, not real iOS/Android hardware.
