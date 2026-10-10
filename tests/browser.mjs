@@ -17,17 +17,44 @@ const verify=(condition,message)=>{assert.ok(condition,message);assertions++;pro
 const freePort=()=>new Promise((resolve,reject)=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const port=s.address().port;s.close(()=>resolve(port));});s.on('error',reject);});
 const retry=async(fn,n=80)=>{let last;for(let i=0;i<n;i++){try{return await fn();}catch(e){last=e;await wait(120);}}throw last;};
 let server,chrome,ws,tmp,requests=[],errors=[],pending=new Map(),nextId=1;
+function terminateChrome(){
+ if(!chrome?.pid)return;
+ try{process.kill(-chrome.pid,'SIGKILL');}
+ catch{try{chrome.kill('SIGKILL');}catch{}}
+}
+
 function send(method,params={}){return new Promise((resolve,reject)=>{const id=nextId++;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));setTimeout(()=>{const p=pending.get(id);if(p){pending.delete(id);reject(new Error('CDP timeout: '+method));}},12000).unref();});}
 async function evaluate(expression){const output=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true,userGesture:true});if(output.exceptionDetails)throw Error(output.exceptionDetails.text+' : '+output.exceptionDetails.exception?.description);return output.result?.value;}
 async function until(expression,message,tries=80){for(let i=0;i<tries;i++){try{if(await evaluate(expression))return true;}catch{}await wait(120);}console.error('DEBUG timeout',message, 'body=',await evaluate('document.body?.innerText?.slice(0,800)').catch(()=>'<unavailable>'), 'errors=',errors, '5xx=',requests);throw Error('Timeout: '+message);}
 async function snapshot(name){const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(join(artifacts,name+'.png'),Buffer.from(shot.data,'base64'));}
 function mouse(type,x,y,buttons=0){return send('Input.dispatchMouseEvent',{type,x,y,button:type==='mouseMoved'?'none':'left',buttons,clickCount:1});}
 async function start(){
- const port=await freePort(),remote=await freePort();tmp=mkdtempSync(join(tmpdir(),'poklike-browser-'));
+ const port=await freePort();tmp=mkdtempSync(join(tmpdir(),'poklike-browser-'));
  server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1','--directory',basePath==='/'?root:resolve(root,'..')],{stdio:'ignore'});
- chrome=spawn(process.env.CHROMIUM||'/usr/bin/chromium',['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-allow-origins=*',`--remote-debugging-port=${remote}`,`--user-data-dir=${tmp}`,'--window-size=1280,900','about:blank'],{stdio:'ignore'});
- await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');if(!r.ok)throw Error(r.status);return r.json();});
- const pages=await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');return r.json();});
+ let pages=null;const launchErrors=[];
+ // GitHub-hosted Chromium occasionally fails to bind CDP on its first launch.
+ // Every retry gets a new isolated profile, process group, and debugging port.
+ for(let attempt=0;attempt<3;attempt++){
+  const remote=await freePort();
+  let stderr='';
+  chrome=spawn(process.env.CHROMIUM||'/usr/bin/chromium',['--headless=new','--no-sandbox','--no-zygote','--disable-gpu','--disable-extensions','--disable-background-networking','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-allow-origins=*',`--remote-debugging-port=${remote}`,`--user-data-dir=${join(tmp,'chrome-'+attempt)}`,'--window-size=1280,900','about:blank'],{stdio:['ignore','ignore','pipe'],detached:true});
+  chrome.stderr?.on('data',data=>{stderr=(stderr+data.toString()).slice(-2400);});
+  try{
+   pages=await retry(async()=>{
+    const response=await fetch('http://127.0.0.1:'+remote+'/json');
+    if(!response.ok)throw Error('CDP status '+response.status);
+    const json=await response.json();
+    if(!json.some(page=>page.type==='page'&&page.webSocketDebuggerUrl))throw Error('No CDP page');
+    return json;
+   },65);
+   break;
+  }catch(error){
+   launchErrors.push('Attempt '+(attempt+1)+': '+String(error)+' '+stderr);
+   terminateChrome();chrome=null;
+   await wait(300);
+  }
+ }
+ if(!pages)throw Error('Chromium startup failed: '+launchErrors.join(' | '));
  const page=pages.find(p=>p.type==='page');assert.ok(page?.webSocketDebuggerUrl);
  ws=new WebSocket(page.webSocketDebuggerUrl);
  await new Promise((res,rej)=>{ws.addEventListener('open',res,{once:true});ws.addEventListener('error',rej,{once:true});});
@@ -156,4 +183,4 @@ async function run(){
  process.stdout.write(`\nPASSED ${assertions} browser assertions, 25/25 online and 25/25 offline toy opens\n`);
 }
 try{await run();}catch(error){console.error('\nBROWSER TEST FAILURE',error);failures++;process.exitCode=1;}
-finally{try{ws?.close();}catch{};server?.kill('SIGTERM');chrome?.kill('SIGTERM');await wait(700);if(tmp)try{rmSync(tmp,{recursive:true,force:true,maxRetries:4,retryDelay:300});}catch{}}
+finally{try{ws?.close();}catch{};try{server?.kill('SIGKILL');}catch{};terminateChrome();await wait(450);if(tmp)try{rmSync(tmp,{recursive:true,force:true,maxRetries:4,retryDelay:300});}catch{}}
