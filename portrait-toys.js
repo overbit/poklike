@@ -36,20 +36,48 @@ function drawing(s){
  r(0,724,480,116,'#f5eee0',0)+palette+action('undo',340,116,112,57,r(340,116,112,57,'#f4e4ce',18)+t(396,145,'Undo',20),'Undo last mark')+action('size',32,116,112,57,r(32,116,112,57,'#e8eceb',18)+t(88,145,'Brush',20),'Change brush size'));
 }
 function board(s){
+ const ready=s.switches[0]&&s.switches[1];
+ const screw=(x,y)=>c(x,y,5,'#9a8875')+l(x-3,y-3,x+3,y+3,'#eee3d2',2);
  const switches=s.switches.map((on,i)=>{
-  const x=81+(i%2)*192,y=202+Math.floor(i/2)*128;
-  return action(`switch:${i}`,x-48,y-44,98,92,
-    r(x-48,y-42,96,87,'#f3e8d3',17)+r(x-11,y-31,22,62,'#b9c6c3',12)+c(x,y+(on?-22:21),26,on?C.teal:C.coral)+c(x-6,y+(on?-30:13),7,'rgba(255,255,255,.56)'),`Toggle switch ${i+1}`);
+  const x=i%2===0?103:377,y=256+Math.floor(i/2)*118;
+  return action(`switch:${i}`,x-60,y-47,120,100,
+    r(x-58,y-44,116,88,'#fdf5e7',23,`stroke="#c4b7a3" stroke-width="3"`)+
+    r(x-13,y-32,26,63,'#acb6b4',13)+
+    c(x,y+(on?-21:21),27,on?C.teal:C.coral)+c(x-8,y+(on?-30:11),8,'rgba(255,255,255,.55)')+
+    screw(x-45,y-30)+screw(x+45,y+30),`Flip switch ${i+1}`);
  }).join('');
- const slider=s.sliders.map((v,i)=>{
-  const y=501+i*100,x=64+350*v;
-  return `<g data-slider="${i}" data-act="slide:${i}" tabindex="0" role="slider" aria-label="Move slider ${i+1}" class="toy-hit">${r(42,y-22,396,42,'#e5e4db',23)}${r(64,y-5,350,12,'#bdc7c7',6)}${r(64,y-5,350*v,12,i?C.coral:C.blue,6,'data-slider-fill="true"')}${c(64+350*v,y,31,C.ink,'data-slider-knob="true"')}${c(64+350*v,y,20,i?C.sun:C.teal,'data-slider-knob="true"')}${r(42,y-32,396,69,'transparent',15)}</g>`;
+ const gear=(x,y,i)=>{
+  const angle=s.dials[i]*47,shade=i===0?C.blue:C.coral;
+  const teeth=Array.from({length:10},(_,n)=>r(x-12,y-57,24,22,shade,5,`transform="rotate(${n*36} ${x} ${y})"`)).join('');
+  const spokes=Array.from({length:5},(_,n)=>l(x,y,x,y-36,C.paper,8,`transform="rotate(${n*72} ${x} ${y})"`)).join('');
+  return action(`gear:${i}`,x-64,y-63,128,126,
+   r(x-64,y-61,128,122,'#fdf5e7',30)+
+   `<g transform="rotate(${angle} ${x} ${y})">${teeth}${c(x,y,50,shade)}${spokes}</g>`+
+   c(x,y,15,C.ink)+c(x-4,y-5,5,C.paper),
+   `Turn connected gear ${i+1}`);
+ };
+ const sliders=s.sliders.map((value,i)=>{
+  const y=595+i*78,x=64+350*value;
+  return `<g data-slider="${i}" data-act="slide:${i}" role="slider" tabindex="0" aria-label="Slide track ${i+1}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(value*100)}" class="toy-hit">`+
+    r(38,y-29,404,58,'#f8f2e9',22)+
+    r(64,y-7,350,14,'#c1c5c0',7)+
+    r(64,y-7,350*value,14,i?C.coral:C.blue,7,'data-slider-fill="true"')+
+    c(x,y,29,C.ink,'data-slider-knob="true"')+c(x,y,22,i?C.sun:C.teal,'data-slider-knob="true"')+
+    c(x-7,y-7,6,C.paper)+r(42,y-35,396,70,'transparent',12)+'</g>';
  }).join('');
- const dial=s.dials.map((v,i)=>{
-  const x=132+i*210;return action(`dial:${i}`,x-61,648,122,114,c(x,704,51,'#e6ddd0')+c(x,704,39,C.paper)+l(x,704,x+30*Math.cos(v*Math.PI/2),704+30*Math.sin(v*Math.PI/2),C.ink,9)+c(x,704,7,C.coral),`Turn dial ${i+1}`);
- }).join('');
- return decorated('#edf3f0',r(30,154,420,655,'#fdfaf3',35,`stroke="#d3d9ce" stroke-width="3"`)+
-  title('Touch, turn and slide')+switches+slider+dial);
+ const powered=ready&&s.sliders[0]>.5,indicator=powered?C.sun:'#abb7b2';
+ return decorated('#e4efe9',
+  r(22,156,436,661,'#edd6b6',34,`stroke="#d2b18b" stroke-width="4"`)+
+  title('Touch every little mechanism')+
+  [36,444].flatMap(x=>[170,806].map(y=>screw(x,y))).join('')+
+  l(240,173,240,229,'#bca48b',6)+
+  c(240,212,33,'#fbf0d4')+c(240,212,23,indicator)+
+  (powered?Array.from({length:8},(_,i)=>l(240+Math.cos(i*Math.PI/4)*36,212+Math.sin(i*Math.PI/4)*36,240+Math.cos(i*Math.PI/4)*47,212+Math.sin(i*Math.PI/4)*47,C.sun,5)).join(''):'')+
+  switches+
+  path('M160 456 H316','none','stroke="#b7a58e" stroke-width="9" stroke-dasharray="12 10"')+
+  gear(171,487,0)+gear(309,487,1)+
+  sliders+
+  r(160,746,160,47,'#e9c49b',24)+t(240,769,powered?'LIGHT IS ON':'KEEP TRYING',16,C.ink));
 }
 function blobs(s){
  const positions=s.blobs.map(toPortrait);const mood=s.mode%4;
@@ -63,21 +91,79 @@ function blobs(s){
   pill(112,731,256,'Another sound','tone','#f1ece6'));
 }
 function book(s){
- const page=s.page%5,names=['Garden','Ocean','Neighborhood','Night sky','Kitchen'];
- const col=['#e4f2e1','#d9eff6','#f5e2c9','#283954','#f5e3d6'][page],dark=page===3;
- let content='';
- if(page===0)content=[flower(171,370,C.coral,1.5),flower(322,480,C.blue,1.15),bush(242,613,1.2)].join('');
- if(page===1)content=path('M30 405 Q145 365 260 405 T450 405 V712 H30 Z','#83c9d9')+Array.from({length:5},(_,i)=>action(`book:${i}`,75+i*73,446+i%2*70,75,75,c(115+i*70,481+i%2*70,27,colors[i])+c(103+i*70,473+i%2*70,4,C.ink),`Meet sea creature ${i+1}`)).join('');
- if(page===2)content=shopIcon('MARKET',242,453)+miniPerson(144,640)+miniPerson(320,642,C.coral);
- if(page===3)content=stars(20,5)+c(330,285,70,C.sun)+c(358,257,70,col)+[150,270,370].map((x,i)=>c(x,544+i%2*54,24,colors[i])).join('');
- if(page===4)content=r(105,360,270,245,'#d6e4da',27)+c(240,495,110,C.ink)+c(240,495,86,C.sun)+[0,1,2].map(i=>c(175+i*65,480+i%2*45,24,colors[i])).join('');
- const objects=Array.from({length:3},(_,i)=>{
- const x=108+i*132,y=250+((i%2)*35),hit=s.touched?.includes(`${page}:${i}`);
- return action(`book:${i}`,x-40,y-39,80,78,c(x,y,32,hit?C.sun:dark?C.paper:C.paper)+t(x,y,['1','2','3'][i],24,C.ink),`Explore object ${i+1}`);
- }).join('');
- return decorated(col,r(29,167,422,556,'rgba(255,255,255,.5)',27)+title(names[page],dark?C.paper:C.ink)+content+objects+
- circleButton('prev',92,767,C.paper,'Previous book page',t(92,767,'<',29))+
- circleButton('next',388,767,C.paper,'Next book page',t(388,767,'>',29)));
+ const page=((s.page%5)+5)%5;
+ const names=['The garden','Under the sea','Our neighborhood','After sunset','In the kitchen'];
+ const bg=['#e4efdf','#dceef3','#f7e8d7','#2e4059','#f2e2d1'][page],dark=page===3;
+ const touched=i=>s.touched?.includes(`${page}:${i}`);
+ const discover=(i,x,y,w,h,illustration,label)=>action(`book:${i}`,x,y,w,h,illustration,`Explore ${label}`);
+ let art='';
+ if(page===0){
+  art=r(29,190,422,485,'#d2e5cc',32)+
+   path('M31 538 Q140 460 260 525 T449 517 V676 H31 Z','#a6cfa4')+
+   [0,1,2].map(i=>{
+    const x=99+i*139,y=425+(i%2)*49,on=touched(i);
+    const flowerArt=flower(x,y,on?C.sun:colors[i],on?1.5:1.1);
+    return discover(i,x-67,y-93,135,160,flowerArt+(on?Array.from({length:4},(_,j)=>c(x+Math.cos(j*1.57)*74,y+Math.sin(j*1.57)*68,8,C.sun)).join(''):''),
+      `flower ${i+1}`);
+   }).join('');
+ }
+ if(page===1){
+  art=r(29,187,422,488,'#98d5df',32)+
+   path('M30 332 Q110 299 190 337 T360 329 T449 329','none','stroke="rgba(255,255,255,.7)" stroke-width="9"')+
+   [0,1,2].map(i=>{
+    const x=106+i*130,y=416+(i%2)*93,on=touched(i),col=[C.coral,C.sun,C.teal][i];
+    return discover(i,x-63,y-57,126,116,
+       `<g transform="translate(${x} ${y}) rotate(${on?12:0})">`+
+       path('M-49 -5 Q-17 -47 41 -20 Q71 -12 38 24 Q-14 47 -49 -5 Z',col)+
+       path('M-38 -4 L-69 -36 L-64 36 Z',col)+
+       c(24,-10,6,C.ink)+(on?c(-21,11,8,C.paper):'')+'</g>'+
+       (on?Array.from({length:4},(_,j)=>c(x+64+j*12,y-44-j*15,6,C.paper)).join(''):''),
+       `fish ${i+1}`);
+   }).join('');
+ }
+ if(page===2){
+  art=r(27,194,426,479,'#b4d5d5',31)+
+   path('M27 575 Q130 533 242 570 T453 548 V674 H27 Z','#b9d3a1')+
+   [0,1,2].map(i=>{
+    const x=75+i*137,y=326,on=touched(i),col=[C.coral,C.blue,C.teal][i];
+    const building=r(x-23,y-4,110,184,col,14)+
+      path(`M${x-35} ${y+4} L${x+32} ${y-63} L${x+102} ${y+4} Z`,C.sun)+
+      r(x+9,y+35,46,50,on?C.sun:C.paper,9)+r(x+28,y+106,38,74,'#f8ecd5',9)+
+      c(x+56,y+146,4,C.ink);
+    return discover(i,x-34,y-63,149,254,building,`${['market','school','library'][i]}`)+
+      (on?miniPerson(x+40,608,col):'');
+   }).join('');
+ }
+ if(page===3){
+  art=r(29,188,422,489,'#304967',29)+stars(24,s.page+1)+
+   [0,1,2].map(i=>{
+    const x=104+i*133,y=310+i%2*100,on=touched(i);
+    return discover(i,x-61,y-58,122,126,
+      c(x,y,on?50:36,on?C.sun:[C.blue,C.coral,C.teal][i])+
+      c(x-10,y-14,on?16:10,'rgba(255,255,255,.45)')+
+      (on?Array.from({length:7},(_,j)=>l(x+Math.cos(j*6.28/7)*55,y+Math.sin(j*6.28/7)*55,x+Math.cos(j*6.28/7)*69,y+Math.sin(j*6.28/7)*69,C.sun,4)).join(''):''),
+      `night-sky light ${i+1}`);
+   }).join('');
+ }
+ if(page===4){
+  art=r(29,186,422,490,'#e7c5a6',31)+r(43,520,393,135,'#b98664',18)+
+   [0,1,2].map(i=>{
+    const x=111+i*132,y=400,on=touched(i),col=[C.coral,C.leaf,C.sun][i];
+    return discover(i,x-60,y-90,122,180,
+      c(x,y,59,C.paper)+c(x,y,43,on?C.sun:'#f2e6ca')+
+      (on?Array.from({length:5},(_,j)=>c(x-25+j*12,y-15+j%2*24,10,col)).join(''):c(x,y,20,col))+
+      (on?path(`M${x-21} ${y-66} Q${x-40} ${y-99} ${x-16} ${y-117}`,'none','stroke="rgba(255,255,255,.7)" stroke-width="7"'):''),
+      `dish ${i+1}`);
+   }).join('');
+ }
+ const nav=action('prev',39,729,91,88,c(86,773,38,C.paper)+t(86,773,'‹',52),'Turn to previous page')+
+  action('next',350,729,91,88,c(394,773,38,C.paper)+t(394,773,'›',52),'Turn to next page');
+ const dots=[0,1,2,3,4].map(i=>c(180+i*30,767,i===page?9:6,i===page?C.sun:C.sand)).join('');
+ return decorated(bg,
+  r(18,173,444,523,dark?'#3e5770':'rgba(255,255,255,.47)',34)+
+  title(names[page],dark?C.paper:C.ink)+art+
+  t(240,708,'Tap the picture · swipe to turn',17,dark?C.paper:C.muted)+
+  nav+dots);
 }
 function town(s){
  const modes=['MARKET','SCHOOL','FARM','PARK'];const mode=s.mode%4;
