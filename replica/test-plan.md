@@ -33,3 +33,14 @@ Install/Add to Home Screen on a physical iPhone/iPad and Android tablet; test ph
 - F03-H1: With offline network emulation after confirmed asset cache, reload gallery and open all 25 activities. Cache should contain portrait-toys.js.
 - Manual M01/M02: Real Safari Add to Home Screen on iPhone; Android Chrome install; verify safe areas, 2-finger sliders, landscape, screen reader, storage under OS memory pressure.
 - Manual M03: Upload V01/V02 video files; timestamp and describe each toy scene before calling replica parity verified.
+
+### Responsive PWA and enhanced play (2026-10-10)
+
+- F01-E-RATIO: 320×568, 390×844, 412×915, 768×1024 and 820×1180 portrait stages preserve circles, shapes and SVG text proportions without clipping or horizontal scrolling.
+- F02-H-GEARS: tap Busy Board's first gear; its neighbor counter-rotates; toggle switches and move two sliders independently with separate pointer IDs.
+- F02-H-BOOK: touch one illustrated discovery; it visibly changes; tap again to reverse; swipe left/right on empty page area and confirm navigation.
+- F02-H-PUZZLE: drag the first portrait puzzle piece to slot 1 and release; it snaps and survives a redraw/reload without jumping.
+- F02-H-TOWN: select a school, farm, library or market; move a resident to that venue; confirm the active place changes and is locally saved.
+- F02-H-MUSIC: dragging blobs plays tones and bringing two close together increments the collision/harmony state.
+- F03-H-UPDATE: the updated v8 service worker precaches all responsive JS assets and continues reopening every game offline.
+- External unresolved checks: real device Safari/iOS and Android Chrome touch and installation, reduced-motion and audio interruption handling, original commercial game parity.

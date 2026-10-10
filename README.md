@@ -10,7 +10,9 @@ Open the site in Safari (iOS) or Chrome (Android), wait for **Ready offline**, t
 
 ## Mobile interaction
 
-The portrait gameplay is **composed for the phone**, not a cropped 960x600 landscape page. Each of the 25 activities has a 480x840 SVG portrait scene with its own controls. Tap or drag the pieces inside each toy, use your finger to draw, experiment with Busy Board's sliding controls, and combine the musical shapes. The only persistent screen-level buttons are home and restart. Wide layouts are available when rotating the device; Cooking, Code Factory and Phonics preserve their richer play mechanics in both orientations.
+The portrait gameplay is **composed for the phone**, not a cropped landscape scene. The 25 original 480×840 toy compositions now live inside a responsive SVG world that expands horizontally or vertically to match the phone's actual play area: circles remain round, text is not stretched, and the entire artwork stays visible at 320px through tablet sizes. Use a finger to manipulate objects directly. Busy Board has independent multi-touch sliders, switches and meshing gears; Busy Book has illustrated discoveries and swipeable pages; Musical Blobs responds to moved shapes and collisions; Town has four tappable places and draggable neighbors; World Puzzle pieces snap to matching targets. Native-style safe area margins keep the back/restart controls clear of cutouts.
+
+The game is **one installable PWA** for Android, iPhone and desktop; there are no separate native apps. Landscape companion scenes remain available when rotating the device.
 
 This is an original interactive interpretation rather than a verified frame-perfect replica. In particular, the commercial toys contain deeper systems, artwork and sounds than these interpretations. See [replica/recon.md](replica/recon.md) and [replica/features.csv](replica/features.csv) for source evidence and unverified details. The two provided YouTube URLs could not be fetched here, so their specific contents are not claimed to have been reviewed.
 

@@ -78,3 +78,13 @@ Screens S02-S26 now have explicit mobile portrait compositions, but video-verifi
 | https://playpokpok.com/blog/new-toy-geometry/ | Drag shapes from sidebar, rotate with taps, discard via black hole bin. | Draggable shape collection; exact rotation/discard and composition variety remain open. |
 
 The status of V01/V02 remains **uninspected**. These additional facts are sourced from official text, not claims about those particular video frames.
+
+
+## Responsive gameplay verification notes (2026-10-10, follow-up)
+
+- The user prioritized the installable web app; all native projects and build workflows have already been removed from this repository.
+- V01 and V02 YouTube links remain **uninspected** because remote YouTube playback/frames/transcripts were unavailable to the research environment. We did not assert gameplay details sourced from them.
+- Current redesign uses original art based on verified public descriptions (P01–P05). Added touchable scenes for Busy Board, Busy Book, Town and Musical Blobs; these are independent mechanics, **not** claims of exact visual parity.
+- Portrait now computes a viewBox from the *rendered stage's* width/height rather than stretching a fixed 480×840 scene. This preserves geometry for 320×568, 390×844, 412×915, 768×1024 and other sizes.
+- Model-coordinate offsets for draggable portrait objects are reversed on save; World Puzzle portrait targets now coincide with its authoritative model snap coordinates. Gesture and offline tests track regressions.
+- The remaining largest uncertainty is 1:1 toy depth and artistic quality versus the original, which requires first-party recording frames or observable walkthroughs.
