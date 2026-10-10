@@ -233,7 +233,7 @@ function town(s){
  }).join('');
  const vehicle=toPortrait(s.vehicle);
  const carX=Math.max(90,Math.min(384,vehicle.x));
- const carY=Math.max(194,Math.min(716,vehicle.y));
+ const carY=Math.max(635,Math.min(716,vehicle.y));
  const visitors=s.people.slice(0,6).map((p,i)=>{
   const at=toPortrait(p),x=Math.max(62,Math.min(421,at.x)),y=Math.max(194,Math.min(700,at.y));
   return drag(`person:${i}`,x,y,`<g transform="scale(1.18)">${miniPerson(0,0,colors[(i+2)%6])}</g>${c(0,0,56,'transparent')}`,`Move neighbor ${i+1} to a place`);
@@ -376,7 +376,7 @@ function puzzle(s){
   title('Make your own little picture')+
   pill(144,172,193,'Mix the pieces','shuffle','#f9f5e9')+
   r(33,243,414,365,'#d7e5dc',28)+slots+
-  (finished?t(240,625,'All the pieces found a home!',19,C.teal):t(240,625,'Drag each piece to its shadow',19,C.muted))+
+  (finished?t(240,625,'All the pieces found a home!',19,C.teal):'')+
   tiles);
 }
 function dinos(s){
