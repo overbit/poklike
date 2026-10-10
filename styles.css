@@ -90,3 +90,38 @@ body[data-reduced="true"] *,body[data-reduced="true"] *:before,body[data-reduced
 @media(max-width:600px){.shell{padding:16px 16px 36px}.topbar{gap:7px}.brand{font-size:1.35rem}.brand-symbol{transform:scale(.83)}.toolbar-actions{gap:6px}.connection-status{padding:9px;font-size:.7rem}.hero{padding:37px 0 33px}.hero-display{display:none}.hero h1{font-size:clamp(2.7rem,12vw,4.6rem)}.hero p{font-size:1.01rem;margin-top:15px}.toys-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.toy-card.featured{grid-column:span 2;grid-row:span 1}.toy-card.featured .toy-preview{min-height:0;aspect-ratio:2.05}.toy-card .toy-description{padding:12px 12px 15px}.toy-card .toy-name{font-size:.94rem}.toy-card .toy-tagline{font-size:.75rem}.toy-card.featured .toy-name{font-size:1.06rem}.home-footer{flex-direction:column;align-items:flex-start;margin-top:34px}.game-shell{padding:9px 7px 25px}.game-header{min-height:53px}.home-link,.game-reset{padding:10px 11px;font-size:0;gap:0;min-width:45px;justify-content:center}.home-link svg,.game-reset svg{width:22px;height:22px}.game-heading h1{font-size:1.09rem}.game-heading p{font-size:.69rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stage-wrap{border-width:4px;border-radius:12px}.game-content{justify-content:flex-start;gap:10px;padding-top:6px}.toy-canvas{max-height:70svh}.play-controls{gap:7px;flex-wrap:nowrap;overflow:auto;justify-content:flex-start;padding:7px 5px 12px;scroll-snap-type:x proximity}.play-control{flex:none;scroll-snap-align:start;padding:11px 14px;min-height:45px;font-size:.82rem}.rotate-hint{display:block}.game-help{font-size:.74rem;max-width:315px}.dialog-inner{padding:23px}}
 @media(max-width:470px) and (orientation:portrait){.toy-canvas{height:min(65svh,440px);width:100%;aspect-ratio:auto}.game-content{flex:1}.stage-wrap{width:100%}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Immersive mobile playground: fill the visible screen, not a scaled-down 960x600 poster. */
+@media (max-width: 900px) {
+ body.playing {height:100dvh;overflow:hidden;overscroll-behavior:none;}
+ body.playing #app {height:100dvh;overflow:hidden;}
+ .game-shell {position:fixed;inset:0;z-index:1;width:100%;max-width:none;height:100vh;height:100dvh;min-height:0;margin:0;padding:0;overflow:hidden;background:var(--paper);}
+ .game-content {position:absolute;inset:0;min-height:0;display:block;padding:0;margin:0;overflow:hidden;}
+ .stage-wrap {position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:0;box-shadow:none;background:var(--white);}
+ .toy-canvas {display:block;position:absolute;inset:0;width:100%;height:100%;max-height:none;aspect-ratio:auto;touch-action:none;}
+ .game-header {position:absolute;z-index:5;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:calc(9px + env(safe-area-inset-top));display:flex;align-items:center;gap:8px;min-height:52px;pointer-events:none;}
+ .home-link,.game-reset {pointer-events:auto;flex:none;min-width:52px;min-height:52px;display:grid;place-items:center;padding:0;border-radius:50%;background:rgba(255,253,248,.96);box-shadow:0 4px 15px rgba(39,56,69,.16);}
+ .home-link svg,.game-reset svg {width:24px;height:24px;}
+ .game-header .game-heading {min-width:0;flex:1;text-align:center;pointer-events:none;}
+ .game-heading h1 {font-size:clamp(.98rem,2.8vw,1.38rem);line-height:1.17;padding:10px 12px;border-radius:24px;background:rgba(255,253,248,.9);display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 3px 10px rgba(39,56,69,.09);}
+ .game-heading p {display:none;}
+ .camera-controls {position:absolute;z-index:4;top:48%;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));display:flex;justify-content:space-between;pointer-events:none;transform:translateY(-50%);}
+ .camera-controls[hidden] {display:none;}
+ .camera-arrow {pointer-events:auto;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(255,253,248,.91);box-shadow:0 4px 16px rgba(39,56,69,.16);width:52px;height:64px;font-size:2.8rem;font-weight:650;color:var(--ink);line-height:1;touch-action:manipulation;}
+ .camera-arrow:disabled {opacity:.2;pointer-events:none;}
+ .camera-controls.vertical {top:auto;bottom:calc(115px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);gap:12px;}
+ .camera-controls.vertical .camera-arrow {transform:rotate(90deg);}
+ .camera-fit {position:absolute;z-index:6;right:max(12px,env(safe-area-inset-right));bottom:calc(92px + env(safe-area-inset-bottom));min-height:46px;border:0;border-radius:23px;padding:10px 19px;background:rgba(255,253,248,.95);box-shadow:0 4px 16px rgba(39,56,69,.16);font-weight:850;color:var(--ink);touch-action:manipulation;}
+ .play-controls {position:absolute;z-index:7;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:auto;max-width:none;height:70px;display:flex;flex-wrap:nowrap;justify-content:flex-start;align-items:center;gap:9px;margin:0;padding:9px 10px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;touch-action:pan-x;border-radius:24px;background:rgba(255,253,248,.96);box-shadow:0 5px 24px rgba(39,56,69,.17);scrollbar-width:none;}
+ .play-controls::-webkit-scrollbar {display:none;}
+ .play-control {display:grid;place-items:center;flex:0 0 auto;min-width:52px;min-height:50px;padding:12px 17px;border-radius:18px;background:var(--paper);box-shadow:none;white-space:nowrap;scroll-snap-align:start;font-size:clamp(.82rem,2vw,1rem);touch-action:manipulation;}
+ .game-help,.rotate-hint {display:none;}
+ .toy-hit,.toy-drag {touch-action:none;}
+ .camera-fit:focus-visible,.camera-arrow:focus-visible {outline:4px solid var(--blue);outline-offset:2px;}
+}
+@media (min-width: 901px) { .camera-controls,.camera-fit {display:none;} }
+@media (max-width: 900px) and (max-height: 400px) {
+ .play-controls {height:60px;}
+ .play-control {min-height:44px;}
+ .camera-fit {bottom:calc(73px + env(safe-area-inset-bottom));}
+}

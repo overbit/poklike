@@ -13,6 +13,7 @@ preferences.sound=preferences.sound!==false;
 preferences.reducedMotion=preferences.reducedMotion===true;
 let offline={phase:'loading',message:'Preparing offline play…'};
 let currentToy=null,dragging=null,ctx=null,installPrompt=null,visited=new Set();
+const camera={x:null,y:null,width:960,height:600,fit:false};
 const safeId=id=>ids.has(id)?id:null;
 const boundedNumber=(value,fallback,min=-9999,max=9999)=>typeof value==='number'&&Number.isFinite(value)?Math.max(min,Math.min(max,value)):fallback;
 function sanitized(id,input){
@@ -55,7 +56,7 @@ function status(){return `<span class="connection-status ${offline.phase==='read
 function brand(){return `<span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Poklike`;}
 function refreshStatus(){document.querySelectorAll('.connection-status').forEach(el=>{el.textContent=offline.message;el.className='connection-status '+(offline.phase==='ready'?'ready':offline.phase==='error'?'error':'');});}
 function gallery(){
- currentToy=null;dragging=null;document.title='Poklike — A little world of play';
+ currentToy=null;dragging=null;document.body.classList.remove('playing');document.title='Poklike — A little world of play';
  app.innerHTML=`<main class="shell">
  <header class="topbar"><a class="brand" href="#/" aria-label="Poklike home">${brand()}</a><div class="toolbar-actions">${status()}<button class="icon-button" data-adult aria-label="Grown-ups area">${svgIcon('adult')}</button></div></header>
  <section class="hero" aria-label="Welcome"><div class="hero-copy"><h1>Little worlds,<br><em>big wonder.</em></h1><p>A cozy collection of tiny adventures. Make music, build anything, draw a new world and follow your curiosity. There's no right way to play.</p></div><div class="hero-display" aria-hidden="true"><div class="disk"></div><div class="cone"></div><div class="block"></div><div class="dot"></div></div></section>
@@ -73,18 +74,46 @@ function gallery(){
 function stageMarkup(id){return `<svg class="toy-canvas" data-stage="${id}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" preserveAspectRatio="xMidYMid meet" aria-label="Interactive ${escapeHtml(toyById(id).title)} play area" role="group">${renderToy(id,loadState(id)).art}</svg>`;}
 function showToy(id){
  id=safeId(id);if(!id){location.hash='#/';return;}
- currentToy=id;dragging=null;visited.add(id);
+ currentToy=id;dragging=null;visited.add(id);camera.x=null;camera.y=null;camera.fit=false;document.body.classList.add('playing');
  const toy=toyById(id),st=loadState(id),scene=renderToy(id,st);
  document.title=toy.title+' — Poklike';
  app.innerHTML=`<main class="game-shell">
   <header class="game-header"><button class="home-link" data-home aria-label="Return to all toys">${svgIcon('back')}<span>All toys</span></button><div class="game-heading"><h1>${escapeHtml(toy.title)}</h1><p>${escapeHtml(toy.tagline)}</p></div><button class="game-reset" data-reset aria-label="Reset this toy">${svgIcon('reset')}<span>Start fresh</span></button></header>
-  <section class="game-content"><div class="stage-wrap">${stageMarkup(id)}</div><div class="play-controls" aria-label="${escapeHtml(toy.title)} tools">${scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join('')}</div><p class="game-help">${escapeHtml(scene.hint)}</p><p class="rotate-hint">On a small phone, try turning sideways for a bigger play space.</p></section>
+  <section class="game-content" aria-label="${escapeHtml(toy.title)} playground"><div class="stage-wrap">${stageMarkup(id)}</div>
+   <div class="camera-controls" aria-label="Move around the playground" hidden><button class="camera-arrow" type="button" data-pan="-1" aria-label="Look left">&#x2039;</button><button class="camera-arrow" type="button" data-pan="1" aria-label="Look right">&#x203a;</button></div>
+   <button class="camera-fit" type="button" data-fit aria-label="Show the whole playground" aria-pressed="false">See all</button>
+   <div class="play-controls" aria-label="${escapeHtml(toy.title)} tools">${scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join('')}</div>
+   <p class="game-help">${escapeHtml(scene.hint)}</p><p class="rotate-hint">Use the arrows to explore, or tap See all for the entire scene.</p></section>
  </main>`;
  const stage=app.querySelector('[data-stage]');
  stage.addEventListener('pointerdown',pointerDown);
  stage.addEventListener('pointermove',pointerMove);
  stage.addEventListener('pointerup',pointerUp);
  stage.addEventListener('pointercancel',pointerUp);
+ requestAnimationFrame(refreshCamera);
+}
+// Camera viewBoxes keep the 960x600 interactive art large without letterboxing.
+// On portrait screens, the full-height scene is horizontally explorable.
+function refreshCamera(){
+ const stage=app.querySelector('[data-stage]');if(!stage||!currentToy)return;
+ const nav=app.querySelector('.camera-controls'),fitButton=app.querySelector('[data-fit]');
+ const immersive=matchMedia('(max-width: 900px)').matches;
+ if(!immersive||camera.fit){stage.setAttribute('viewBox','0 0 960 600');stage.setAttribute('preserveAspectRatio','xMidYMid meet');if(nav)nav.hidden=true;if(fitButton){fitButton.setAttribute('aria-pressed',String(camera.fit));fitButton.textContent=camera.fit?'Fill screen':'See all';}return;}
+ const r=stage.getBoundingClientRect();if(r.width<1||r.height<1)return;
+ const aspect=r.width/r.height;camera.width=Math.min(960,600*aspect);camera.height=Math.min(600,960/aspect);
+ const maxX=960-camera.width,maxY=600-camera.height;
+ camera.x=Math.max(0,Math.min(maxX,camera.x===null?maxX/2:camera.x));
+ camera.y=Math.max(0,Math.min(maxY,camera.y===null?maxY/2:camera.y));
+ stage.setAttribute('viewBox',`${camera.x} ${camera.y} ${camera.width} ${camera.height}`);
+ stage.setAttribute('preserveAspectRatio','none');
+ if(nav){nav.hidden=maxX<8&&maxY<8;nav.classList.toggle('vertical',maxY>8&&maxX<8);nav.querySelector('[data-pan="-1"]').disabled=(maxX>8?camera.x:camera.y)<1;nav.querySelector('[data-pan="1"]').disabled=(maxX>8?maxX-camera.x:maxY-camera.y)<1;}
+ if(fitButton){fitButton.setAttribute('aria-pressed','false');fitButton.textContent='See all';}
+}
+function panCamera(direction){
+ if(!currentToy||camera.fit)return;
+ if(camera.width<959)camera.x=Math.max(0,Math.min(960-camera.width,(camera.x||0)+direction*camera.width*.76));
+ else if(camera.height<599)camera.y=Math.max(0,Math.min(600-camera.height,(camera.y||0)+direction*camera.height*.76));
+ refreshCamera();
 }
 function updateStage(){if(!currentToy||dragging)return;const svg=app.querySelector('[data-stage]');if(svg)svg.innerHTML=renderToy(currentToy,loadState(currentToy)).art;}
 function handleAction(action){
@@ -210,6 +239,8 @@ async function prepareOffline(){
 app.addEventListener('click',ev=>{
  const target=ev.target instanceof Element?ev.target:null;if(!target)return;
  if(target.closest('[data-home]')){location.hash='#/';return;}
+ const pan=target.closest('[data-pan]');if(pan&&currentToy){panCamera(Number(pan.dataset.pan));return;}
+ if(target.closest('[data-fit]')&&currentToy){camera.fit=!camera.fit;refreshCamera();return;}
  const toy=target.closest('[data-toy]');if(toy){location.hash='#/toy/'+toy.dataset.toy;return;}
  if(target.closest('[data-reset]')&&currentToy){states[currentToy]=initialState(currentToy);save();showToy(currentToy);return;}
  if(target.closest('[data-adult]')){grownUps();return;}
@@ -234,6 +265,8 @@ document.addEventListener('keydown',ev=>{
  if(control&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();handleAction(control.dataset.act);}
 });
 window.addEventListener('hashchange',route);
+window.addEventListener('resize',()=>{if(currentToy)requestAnimationFrame(refreshCamera);});
+window.visualViewport?.addEventListener('resize',()=>{if(currentToy)requestAnimationFrame(refreshCamera);});
 window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPrompt=ev;document.querySelector('#install-button')?.classList.add('available');});
 window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySelector('#install-button')?.classList.remove('available');});
 setInterval(()=>{
