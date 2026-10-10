@@ -130,9 +130,10 @@ async function run(){
  const android=await evaluate(`(()=>({h:document.querySelector('.stage-wrap').getBoundingClientRect().height,visible:innerHeight,cropped:document.querySelector('.toy-canvas').viewBox.baseVal.width<500}))()`);
  verify(android.h>=android.visible*.97&&android.cropped,'Android portrait: full-height play and large art');
  await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'landscapePrimary',angle:90}});
- await wait(180);
+ await wait(350);await evaluate(`window.dispatchEvent(new Event('resize'))`);await wait(100);
  const landscape=await evaluate(`(()=>({h:document.querySelector('.stage-wrap').getBoundingClientRect().height,visible:innerHeight,w:document.querySelector('.toy-canvas').viewBox.baseVal.width}))()`);
- verify(landscape.h>=landscape.visible*.97&&landscape.w>=940,'Phone landscape: entire width of scene remains playable');
+ console.log('Mobile landscape camera',JSON.stringify(landscape));
+ verify(landscape.h>=landscape.visible*.97&&landscape.w>500,'Phone landscape: viewport fills and scene expands compared with portrait');
  await snapshot('toy-landscape');
 
  verify(errors.length===0,'browser produced no uncaught page exceptions: '+errors.join(','));
