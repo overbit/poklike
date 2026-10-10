@@ -23,8 +23,6 @@ jobs:
           ref: main
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Package static offline app
         run: |
           mkdir -p _site/icons
