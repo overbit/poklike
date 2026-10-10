@@ -59,6 +59,21 @@ setMotion();
 function status(){return `<span class="connection-status ${offline.phase==='ready'?'ready':offline.phase==='error'?'error':''}" role="status" aria-live="polite">${escapeHtml(offline.message)}</span>`;}
 function brand(){return `<span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Poklike`;}
 function refreshStatus(){document.querySelectorAll('.connection-status').forEach(el=>{el.textContent=offline.message;el.className='connection-status '+(offline.phase==='ready'?'ready':offline.phase==='error'?'error':'');});}
+function previewArt(id){
+ const state=loadState(id);
+ if(id==='drawing'&&(!state.strokes||state.strokes.length===0)){
+  const stroke=(c,w,points)=>({c,w,points});
+  const sun=Array.from({length:33},(_,i)=>{const a=i*Math.PI/16;return [710+48*Math.cos(a),166+48*Math.sin(a)];});
+  const hills=Array.from({length:27},(_,i)=>[60+i*34,438-44*Math.sin(i*.29)]);
+  const waves=Array.from({length:23},(_,i)=>[170+i*28,326+25*Math.sin(i*.57)]);
+  const petal=a=>Array.from({length:17},(_,i)=>{const t=i*Math.PI/8;return [300+45*Math.cos(t)+22*Math.cos(a),470+31*Math.sin(t)+19*Math.sin(a)];});
+  const art=[stroke(1,21,sun),stroke(2,22,hills),stroke(3,15,waves),
+   ...[0,Math.PI/2,Math.PI,3*Math.PI/2].map(a=>stroke(0,16,petal(a))),
+   stroke(1,23,[[300,466],[302,469]])];
+  return renderToy(id,{...state,strokes:art}).art;
+ }
+ return (renderWideToy(id,state)||renderToy(id,state)).art;
+}
 function gallery(){
  currentToy=null;gestures.clear();document.body.classList.remove('playing');document.title='Poklike — A little world of play';
  app.innerHTML=`<main class="shell">
@@ -66,7 +81,7 @@ function gallery(){
  <section class="hero" aria-label="Welcome"><div class="hero-copy"><h1>Little worlds,<br><em>big wonder.</em></h1><p>A cozy collection of tiny adventures. Make music, build anything, draw a new world and follow your curiosity. There's no right way to play.</p></div><div class="hero-display" aria-hidden="true"><div class="disk"></div><div class="cone"></div><div class="block"></div><div class="dot"></div></div></section>
  <section aria-labelledby="collection-title"><div class="collection-heading"><h2 id="collection-title">Choose something to explore</h2><span>${toys.length} little adventures</span></div>
  <div class="toys-grid">${toys.map((toy,i)=>{
-  const {art}=renderWideToy(toy.id,loadState(toy.id))||renderToy(toy.id,loadState(toy.id));
+  const art=previewArt(toy.id);
   return `<button class="toy-card ${i===0?'featured':''}" style="--accent:${toy.color}" data-toy="${toy.id}" aria-label="Play ${escapeHtml(toy.title)}">
    <span class="toy-preview" aria-hidden="true"><svg viewBox="0 0 960 600" preserveAspectRatio="xMidYMid slice">${art}</svg></span>
    <span class="toy-description"><span class="toy-name">${escapeHtml(toy.title)}</span><span class="toy-tagline">${escapeHtml(toy.tagline)}</span></span>
