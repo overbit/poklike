@@ -123,3 +123,9 @@ body[data-reduced="true"] *,body[data-reduced="true"] *:before,body[data-reduced
  .play-control{min-height:44px;padding:8px 14px}
 }
 @media(hover:none){.toy-hit:hover,.toy-drag:hover,.play-control:hover{filter:none;transform:none}}
+
+/* Rich wide scenes embed all important actions in the toy, not a toolbar. */
+.game-shell.rich-wide .play-controls{display:none}
+@media(max-width:1024px) and (orientation:portrait){
+ .game-shell .stage-wrap{top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);height:auto}
+}

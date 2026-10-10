@@ -1,5 +1,6 @@
 import {toys,ids,toyById,initialState,renderToy,interact,moveDrag,tickToy,C} from './toys.js';
 import {renderPortraitToy,toModel,toPortrait} from './portrait-toys.js';
+import {renderWideToy,richWideIds} from './wide-toys.js';
 
 const KEY='poklike-state-v1', PREF='poklike-prefs-v1';
 const app=document.querySelector('#app');
@@ -65,7 +66,7 @@ function gallery(){
  <section class="hero" aria-label="Welcome"><div class="hero-copy"><h1>Little worlds,<br><em>big wonder.</em></h1><p>A cozy collection of tiny adventures. Make music, build anything, draw a new world and follow your curiosity. There's no right way to play.</p></div><div class="hero-display" aria-hidden="true"><div class="disk"></div><div class="cone"></div><div class="block"></div><div class="dot"></div></div></section>
  <section aria-labelledby="collection-title"><div class="collection-heading"><h2 id="collection-title">Choose something to explore</h2><span>${toys.length} little adventures</span></div>
  <div class="toys-grid">${toys.map((toy,i)=>{
-  const {art}=renderToy(toy.id,loadState(toy.id));
+  const {art}=renderWideToy(toy.id,loadState(toy.id))||renderToy(toy.id,loadState(toy.id));
   return `<button class="toy-card ${i===0?'featured':''}" style="--accent:${toy.color}" data-toy="${toy.id}" aria-label="Play ${escapeHtml(toy.title)}">
    <span class="toy-preview" aria-hidden="true"><svg viewBox="0 0 960 600" preserveAspectRatio="xMidYMid slice">${art}</svg></span>
    <span class="toy-description"><span class="toy-name">${escapeHtml(toy.title)}</span><span class="toy-tagline">${escapeHtml(toy.tagline)}</span></span>
@@ -77,14 +78,17 @@ function gallery(){
 function isPortraitPlay(){
  return matchMedia('(max-width: 1024px) and (orientation: portrait)').matches;
 }
-function wideViewBox(){
+function wideViewBox(id){
+ if(id==='drawing')return '0 0 960 600';
  const ratio=innerWidth/Math.max(1,innerHeight);
  const height=Math.max(430,Math.min(600,960/ratio));
  const top=Math.round((600-height)/2);
  return `0 ${top} 960 ${Math.round(height)}`;
 }
 function buildScene(id){
- return isPortraitPlay()?renderPortraitToy(id,loadState(id)):{art:renderToy(id,loadState(id)).art,viewBox:wideViewBox()};
+ if(isPortraitPlay())return renderPortraitToy(id,loadState(id));
+ const wide=renderWideToy(id,loadState(id))||renderToy(id,loadState(id));
+ return {...wide,viewBox:wideViewBox(id)};
 }
 function stageMarkup(id){
  const scene=buildScene(id),portrait=isPortraitPlay();
@@ -95,7 +99,7 @@ function showToy(id){
  currentToy=id;gestures.clear();visited.add(id);document.body.classList.add('playing');
  const toy=toyById(id),scene=renderToy(id,loadState(id));
  document.title=toy.title+' — Poklike';
- app.innerHTML=`<main class="game-shell">
+ app.innerHTML=`<main class="game-shell ${!isPortraitPlay()&&richWideIds.has(id)?'rich-wide':''}">
   <header class="game-header"><button class="home-link" data-home aria-label="Return to all toys">${svgIcon('back')}<span>All toys</span></button><div class="game-heading"><h1>${escapeHtml(toy.title)}</h1><p>${escapeHtml(toy.tagline)}</p></div><button class="game-reset" data-reset aria-label="Reset this toy">${svgIcon('reset')}<span>Start fresh</span></button></header>
   <section class="game-content" aria-label="${escapeHtml(toy.title)} playground"><div class="stage-wrap">${stageMarkup(id)}</div>
    <div class="play-controls" aria-label="${escapeHtml(toy.title)} tools">${scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join('')}</div>
@@ -305,7 +309,7 @@ document.addEventListener('keydown',ev=>{
 });
 window.addEventListener('hashchange',route);
 let currentLayout='';
-function responsiveStage(){if(!currentToy)return;const stage=app.querySelector('[data-stage]');if(!stage)return;const layout=isPortraitPlay()?'portrait':'landscape';const scene=buildScene(currentToy);stage.setAttribute('viewBox',scene.viewBox);stage.setAttribute('preserveAspectRatio',layout==='portrait'?'none':'xMidYMid meet');if(stage.dataset.layout!==layout){stage.dataset.layout=layout;stage.innerHTML=scene.art;}}
+function responsiveStage(){if(!currentToy)return;const stage=app.querySelector('[data-stage]');if(!stage)return;const layout=isPortraitPlay()?'portrait':'landscape';const scene=buildScene(currentToy);stage.setAttribute('viewBox',scene.viewBox);stage.setAttribute('preserveAspectRatio',layout==='portrait'?'none':'xMidYMid meet');app.querySelector('.game-shell')?.classList.toggle('rich-wide',layout==='landscape'&&richWideIds.has(currentToy));if(stage.dataset.layout!==layout){stage.dataset.layout=layout;stage.innerHTML=scene.art;}}
 window.addEventListener('resize',responsiveStage);
 window.visualViewport?.addEventListener('resize',responsiveStage);
 window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPrompt=ev;document.querySelector('#install-button')?.classList.add('available');});
