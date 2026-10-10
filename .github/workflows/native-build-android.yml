@@ -7,6 +7,9 @@ on:
       - 'toys.js'
       - '.github/workflows/native-build-android.yml'
   workflow_dispatch:
+concurrency:
+  group: poklike-native-apk-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:

@@ -11,6 +11,9 @@ on:
       - 'native/**'
       - 'toys.js'
       - '.github/workflows/native-verify.yml'
+concurrency:
+  group: poklike-native-bundle-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
