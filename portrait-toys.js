@@ -166,15 +166,65 @@ function book(s){
   nav+dots);
 }
 function town(s){
- const modes=['MARKET','SCHOOL','FARM','PARK'];const mode=s.mode%4;
- const skyline=[C.coral,C.blue,C.sun,C.leaf][mode];
- const building=shopIcon(modes[mode],247,355);
- const vehicle=toPortrait(s.vehicle),folks=s.people.slice(0,7);
- return decorated('#dff0ec',path('M0 370 Q100 335 205 370 T480 370 V840 H0 Z','#c7e1bc')+r(0,595,480,167,'#aaa8a0',0)+l(0,679,480,679,'#f6f1dc',5,'stroke-dasharray="17 24"')+
-  title('Around town')+building+
-  drag('vehicle',Math.max(65,vehicle.x),Math.min(728,Math.max(570,vehicle.y+165)),r(-61,-26,122,62,C.coral,19)+c(-36,40,21,C.ink)+c(37,40,21,C.ink)+r(-37,-12,75,32,'#c1e4e3',12),'Drive the car')+
-  folks.map((p,i)=>{const at=toPortrait(p);return drag(`person:${i}`,Math.max(60,at.x),Math.min(715,Math.max(510,at.y)),miniPerson(0,0,colors[i%6]),`Move resident ${i+1}`);}).join('')+
-  modes.map((name,i)=>action(`building:${i}`,40+i*101,743,95,72,r(40+i*101,743,95,72,i===mode?skyline:C.paper,18)+t(87+i*101,777,['Shop','School','Farm','Park'][i],14,i===mode?C.paper:C.ink),`Visit ${name.toLowerCase()}`)).join(''));
+ const places=[
+  {name:'School',color:C.blue,icon:'school'},
+  {name:'Farm',color:C.leaf,icon:'farm'},
+  {name:'Library',color:C.coral,icon:'library'},
+  {name:'Market',color:C.teal,icon:'market'}
+ ];
+ const selected=((s.mode%4)+4)%4;
+ const placeArt=places.map((item,i)=>{
+  const x=34+(i%2)*224,y=211+Math.floor(i/2)*187;
+  const active=i===selected;
+  const roof=path(`M${x-7} ${y+38} L${x+90} ${y-10} L${x+191} ${y+38} Z`,item.color);
+  const facade=r(x+7,y+36,169,129,active?'#fff8e5':'#fdf9ec',15,`stroke="${active?C.sun:'#d4d7ce'}" stroke-width="${active?6:2}"`);
+  let details='';
+  if(i===0){
+   details=[0,1].map(j=>r(x+30+j*82,y+59,57,47,'#b9e1ee',8)+l(x+59+j*82,y+58,x+59+j*82,y+108,C.paper,5)).join('')+
+    t(x+91,y+128,active?'A B C':'1 2 3',22,C.ink);
+  }
+  if(i===1){
+   details=[0,1,2].map(j=>flower(x+42+j*52,y+125,active?C.sun:colors[j],.34)).join('')+
+    r(x+111,y+52,48,55,'#d7a67b',7);
+  }
+  if(i===2){
+   details=[0,1,2,3].map(j=>r(x+28+j*35,y+69,27,72,colors[(j+(active?1:0))%6],5)+
+     l(x+34+j*35,y+94,x+48+j*35,y+94,C.paper,3)).join('');
+  }
+  if(i===3){
+   details=r(x+27,y+62,122,76,'#c9e5d9',8)+
+    [0,1,2].map(j=>c(x+52+j*35,y+104,15,colors[(j+selected)%6])).join('');
+  }
+  return action(`building:${i}`,x-9,y-14,206,195,roof+facade+details+
+   r(x+18,y+151,149,30,item.color,15)+t(x+91,y+167,item.name,16,C.paper)+
+   (active?Array.from({length:3},(_,j)=>c(x+32+j*59,y+21,6,C.sun)).join(''):''),
+   `Visit ${item.name.toLowerCase()}`);
+ }).join('');
+ const vehicle=toPortrait(s.vehicle);
+ const carX=Math.max(90,Math.min(384,vehicle.x));
+ const carY=Math.max(633,Math.min(716,vehicle.y));
+ const visitors=s.people.slice(0,6).map((p,i)=>{
+  const at=toPortrait(p),x=Math.max(62,Math.min(421,at.x)),y=Math.max(609,Math.min(700,at.y));
+  return drag(`person:${i}`,x,y,`<g transform="scale(1.18)">${miniPerson(0,0,colors[(i+2)%6])}</g>${c(0,0,56,'transparent')}`,`Move neighbor ${i+1} to a place`);
+ }).join('');
+ const car=drag('vehicle',carX,carY,
+  r(-74,-29,148,51,C.coral,18)+
+  path('M-48 -28 L-28 -61 H37 L61 -27 Z','#ea826c')+
+  r(-24,-53,57,28,'#b6e4e3',8)+
+  c(-44,24,23,C.ink)+c(47,24,23,C.ink)+
+  c(-44,24,11,C.paper)+c(47,24,11,C.paper)+
+  r(-83,-60,166,107,'transparent',12),
+  'Drive the town car');
+ return decorated('#deefe5',
+   title('Explore the little neighborhood')+
+   path('M0 576 Q130 543 253 578 T480 569 V840 H0Z','#b0d5a7')+
+   r(0,624,480,137,'#a7aaa6',0)+
+   l(0,697,480,697,'#fbf4dd',6,'stroke-dasharray="18 22"')+
+   placeArt+
+   visitors+car+
+   r(38,740,283,72,C.paper,25)+
+   t(179,770,`Visiting ${places[selected].name}`,19)+
+   pill(329,745,133,'New friend','visitor','#f0d4ab'));
 }
 function house(s){
  const room=s.room%3;
