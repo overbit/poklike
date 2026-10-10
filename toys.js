@@ -78,10 +78,10 @@ export function initialState(id){
   case 'geometry':return {...base,pieces:[{x:220,y:250},{x:380,y:280},{x:560,y:240},{x:700,y:330},{x:300,y:420}]};
   case 'space':return {...base,planet:0,rocket:{x:330,y:340},stars:0};
   case 'number-journey':return {...base,number:3,kind:0};
-  case 'phonics':return {...base,word:0,letter:0};
+  case 'phonics':return {...base,word:0,letter:0,placed:[false,false,false]};
   case 'pawn-maker':return {...base,face:0,body:0,eyes:0,head:0};
-  case 'cooking':return {...base,ingredients:[],heat:false,stir:0};
-  case 'code-factory':return {...base,commands:[1,1,2,1,0,1],robot:0,playing:false};
+  case 'cooking':return {...base,ingredients:[],heat:false,stir:0,guest:0,craving:0,served:0,rejected:0,water:false,cupboards:[false,false,false]};
+  case 'code-factory':return {...base,commands:[1,1,2,1,0,1],robot:0,playing:true,crates:0,goods:0,mess:0};
   default:return base;
  }
 }
@@ -426,23 +426,33 @@ export function interact(id,s,action){
   if(a==='kind')s.kind++;
   break;
  case 'phonics':
-  if(a==='word'){s.word=(s.word+1)%letters.length;s.letter=0;}
-  if(a==='letter')s.letter=n;
+  if(a==='word'){s.word=(s.word+1)%letters.length;s.letter=0;s.placed=[false,false,false];}
+  if(a==='letter'){s.letter=n;if(Number.isInteger(n)&&n>=0&&n<s.placed.length)s.placed[n]=true;}
   if(a==='sound')s.letter=(s.letter+1)%3;
   break;
  case 'pawn-maker':
   if(['face','body','eyes','head'].includes(a))s[a]=(s[a]+1)%(['face'].includes(a)?4:3);
   break;
  case 'cooking':
+  if(a==='scene')s.mode=(s.mode+1)%2;
+  if(a==='guest'&&Number.isInteger(n)&&n>=0&&n<3){s.guest=n;s.craving=(s.craving+1+n)%4;}
+  if(a==='serve'){
+   if(s.ingredients.length){s.served++;s.guest=(s.guest+1)%3;s.ingredients=[];s.rejected=0;}
+   else s.rejected++;
+  }
+  if(a==='cupboard'&&Number.isInteger(n)&&n>=0&&n<s.cupboards.length)s.cupboards[n]=!s.cupboards[n];
   if(a==='ingredient'&&s.ingredients.length<35)s.ingredients.push(n);
+  if(a==='water')s.water=!s.water;
   if(a==='heat')s.heat=!s.heat;
   if(a==='stir')s.stir++;
-  if(a==='fresh'){s.ingredients=[];s.heat=false;}
+  if(a==='fresh'){s.ingredients=[];s.heat=false;s.water=false;}
   break;
  case 'code-factory':
-  if(a==='command')s.commands[n]=(s.commands[n]+1)%4;
+  if((a==='command'||a==='director')&&Number.isInteger(n)&&n>=0&&n<s.commands.length)s.commands[n]=(s.commands[n]+1)%4;
   if(a==='run')s.playing=!s.playing;
   if(a==='route'){s.robot=0;s.commands=s.commands.map((c,i)=>(c+i+1)%4);}
+  if(a==='crate'){s.crates++;s.goods++;s.mess=Math.min(6,s.mess+1);}
+  if(a==='clean')s.mess=0;
   break;
  }
  return s;
@@ -451,6 +461,7 @@ export function moveDrag(id,s,key,x,y){
  x=Math.max(60,Math.min(885,v(x)));y=Math.max(85,Math.min(520,v(y)));
  const [type,num]=key.split(':'),n=Number(num);
  if(id==='musical-blobs'&&type==='blob'&&s.blobs[n]){s.blobs[n]={x,y};if(s.blobs.some((p,i)=>i!==n&&Math.hypot(p.x-x,p.y-y)<118))s.collisions=(s.collisions||0)+1;return true;}
+ if(id==='phonics'&&type==='phoneme'&&Number.isInteger(n)&&n>=0&&n<3){if(y>=330)s.placed[n]=true;return true;}
  if(id==='town'){
   if(type==='vehicle'){s.vehicle={x,y};return true;}
   if(type==='person'&&s.people[n]){s.people[n]={x,y};return true;}
@@ -474,7 +485,7 @@ export function tickToy(id,s){
  if(id==='sequencer'&&s.playing){s.beat=(s.beat+1)%8;return s.steps.flatMap((row,i)=>row[s.beat]?[220,330,440,550][i]:[]);}
  if(id==='radio'&&s.playing){s.turn++;return [[262,330,392,440],[220,277,330,370],[330,392,440,523],[262,349,392,494]][s.station%4].slice(s.turn%4,s.turn%4+1).map(f=>f*(s.volume?1:0));}
  if(id==='marble-machine'&&s.running){s.marble=(s.marble+3)%70;return [];}
- if(id==='code-factory'&&s.playing){s.robot=(s.robot+1)%6;return [220+s.commands[s.robot]*110];}
+ if(id==='code-factory'&&s.playing){s.robot=(s.robot+1)%6;return s.robot===0?[220+s.commands[0]*110]:[];}
  return null;
 }
 export const toyById=id=>toys.find(t=>t.id===id);
