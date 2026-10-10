@@ -8,8 +8,7 @@ export const toModel=({x,y})=>({x:x*2,y:y/1.4});
 const n=v=>Math.round(v*10)/10;
 const safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const r=(x,y,w,h,fill,rad=14,extras='')=>`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${rad}" fill="${fill}" ${extras}/>`;
-let circleWidthRatio=1;
-const c=(x,y,rad,fill,extras='')=>`<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rad*circleWidthRatio)}" ry="${rad}" fill="${fill}" ${extras}/>`;
+const c=(x,y,rad,fill,extras='')=>`<circle cx="${n(x)}" cy="${n(y)}" r="${n(rad)}" fill="${fill}" ${extras}/>`;
 const l=(x1,y1,x2,y2,col=C.ink,sw=6,extras='')=>`<path d="M${n(x1)} ${n(y1)} L${n(x2)} ${n(y2)}" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" fill="none" ${extras}/>`;
 const t=(x,y,str,size=23,col=C.ink,extra='')=>`<text x="${n(x)}" y="${n(y)}" fill="${col}" font-family="ui-rounded,system-ui,sans-serif" font-size="${size}" font-weight="800" text-anchor="middle" dominant-baseline="middle" ${extra}>${safe(str)}</text>`;
 const path=(d,col,extra='')=>`<path d="${d}" fill="${col}" ${extra}/>`;
@@ -343,11 +342,23 @@ function factory(s){
   pill(249,728,199,'Clean up','clean'));
 }
 
+// Expand the world around the *authored* composition. Changing the SVG aspect
+// ratio or stretching circles/text made toys appear misshapen on tall phones.
+export function portraitFrame(viewportAspect=PORTRAIT.width/PORTRAIT.height){
+ const base=PORTRAIT.width/PORTRAIT.height;
+ const ratio=Number.isFinite(viewportAspect)&&viewportAspect>0?Math.max(.25,Math.min(1.4,viewportAspect)):base;
+ const width=ratio>base?Math.round(PORTRAIT.height*ratio*100)/100:PORTRAIT.width;
+ const height=ratio<base?Math.round(PORTRAIT.width/ratio*100)/100:PORTRAIT.height;
+ const offsetX=Math.round((width-PORTRAIT.width)*50)/100;
+ const offsetY=Math.round((height-PORTRAIT.height)*50)/100;
+ return {width,height,offsetX,offsetY,viewBox:`0 0 ${width} ${height}`};
+}
 export function renderPortraitToy(id,s,viewportAspect=PORTRAIT.width/PORTRAIT.height){
- circleWidthRatio=Math.max(.7,Math.min(1.5,(PORTRAIT.width/PORTRAIT.height)/(Number(viewportAspect)||PORTRAIT.width/PORTRAIT.height)));
  const cases={drawing, 'busy-board':board,'musical-blobs':blobs,'busy-book':book,town,house,forest,islands,shapes,'dress-up':dress,'silly-blocks':blocks,'marble-machine':marble,sequencer:sequence,radio,'world-puzzle':puzzle,dinosaurs:dinos,'connect-the-dots':dots,shops,geometry,space,'number-journey':numbers,phonics,'pawn-maker':pawn,cooking,'code-factory':factory};
  const renderer=cases[id];
  if(!renderer)throw new Error('No portrait scene for '+id);
- const art=renderer(s);circleWidthRatio=1;
- return {art,viewBox:'0 0 480 840'};
+ const scene=renderer(s),frame=portraitFrame(viewportAspect);
+ const background=scene.match(/^<rect[^>]*fill="([^"]+)"/)?.[1]||C.paper;
+ const art=`<rect x="0" y="0" width="${frame.width}" height="${frame.height}" fill="${background}"/><g data-world="true" transform="translate(${frame.offsetX} ${frame.offsetY})">${scene}</g>`;
+ return {...frame,art};
 }
