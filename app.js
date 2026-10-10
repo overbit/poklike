@@ -85,14 +85,18 @@ function wideViewBox(id){
  const top=Math.round((600-height)/2);
  return `0 ${top} 960 ${Math.round(height)}`;
 }
+function sceneAspect(){
+ const frame=app.querySelector('.stage-wrap')?.getBoundingClientRect();
+ return frame?.width&&frame?.height?frame.width/frame.height:innerWidth/Math.max(1,innerHeight);
+}
 function buildScene(id){
- if(isPortraitPlay())return renderPortraitToy(id,loadState(id),innerWidth/Math.max(1,innerHeight));
+ if(isPortraitPlay())return renderPortraitToy(id,loadState(id),sceneAspect());
  const wide=renderWideToy(id,loadState(id))||renderToy(id,loadState(id));
  return {...wide,viewBox:wideViewBox(id)};
 }
 function stageMarkup(id){
  const scene=buildScene(id),portrait=isPortraitPlay();
- return `<svg class="toy-canvas" data-stage="${id}" data-layout="${portrait?'portrait':'landscape'}" xmlns="http://www.w3.org/2000/svg" viewBox="${scene.viewBox}" preserveAspectRatio="${portrait?'none':'xMidYMid meet'}" aria-label="Interactive ${escapeHtml(toyById(id).title)} play area" role="group">${scene.art}</svg>`;
+ return `<svg class="toy-canvas" data-stage="${id}" data-layout="${portrait?'portrait':'landscape'}" data-offset-x="${scene.offsetX||0}" data-offset-y="${scene.offsetY||0}" xmlns="http://www.w3.org/2000/svg" viewBox="${scene.viewBox}" preserveAspectRatio="xMidYMid meet" aria-label="Interactive ${escapeHtml(toyById(id).title)} play area" role="group">${scene.art}</svg>`;
 }
 function showToy(id){
  id=safeId(id);if(!id){location.hash='#/';return;}
@@ -110,6 +114,7 @@ function showToy(id){
  stage.addEventListener('pointermove',pointerMove);
  stage.addEventListener('pointerup',pointerUp);
  stage.addEventListener('pointercancel',pointerUp);
+ requestAnimationFrame(responsiveStage);
 }
 function updateStage(){
  if(!currentToy||gestures.size)return;
@@ -131,7 +136,8 @@ function handleAction(action){
 function point(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
  const ctm=svg.getScreenCTM();if(!ctm)return {x:0,y:0};
- const p=pt.matrixTransform(ctm.inverse());return {x:p.x,y:p.y};
+ const p=pt.matrixTransform(ctm.inverse());
+ return {x:p.x-Number(svg.dataset.offsetX||0),y:p.y-Number(svg.dataset.offsetY||0)};
 }
 function pointerDown(ev){
  if(!currentToy||gestures.has(ev.pointerId))return;
@@ -160,7 +166,7 @@ function pointerDown(ev){
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
   path.setAttribute('fill','none');path.setAttribute('stroke',([C.coral,C.sun,C.teal,C.blue,C.plum,C.leaf])[st.color]);
   path.setAttribute('stroke-width',String(portrait?st.width*.7:st.width));
-  path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');svg.appendChild(path);
+  path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');(portrait?svg.querySelector('[data-world]'):svg).appendChild(path);
   gestures.set(ev.pointerId,{kind:'draw',line,path,portrait});
   try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();
  }
@@ -309,7 +315,17 @@ document.addEventListener('keydown',ev=>{
 });
 window.addEventListener('hashchange',route);
 let currentLayout='';
-function responsiveStage(){if(!currentToy)return;const stage=app.querySelector('[data-stage]');if(!stage)return;const layout=isPortraitPlay()?'portrait':'landscape';const scene=buildScene(currentToy);stage.setAttribute('viewBox',scene.viewBox);stage.setAttribute('preserveAspectRatio',layout==='portrait'?'none':'xMidYMid meet');app.querySelector('.game-shell')?.classList.toggle('rich-wide',layout==='landscape'&&richWideIds.has(currentToy));if(stage.dataset.layout!==layout){stage.dataset.layout=layout;stage.innerHTML=scene.art;}}
+function responsiveStage(){
+ if(!currentToy||gestures.size)return;
+ const stage=app.querySelector('[data-stage]');if(!stage)return;
+ const layout=isPortraitPlay()?'portrait':'landscape',scene=buildScene(currentToy);
+ const changed=stage.dataset.layout!==layout||stage.getAttribute('viewBox')!==scene.viewBox;
+ stage.setAttribute('viewBox',scene.viewBox);
+ stage.setAttribute('preserveAspectRatio','xMidYMid meet');
+ stage.dataset.offsetX=String(scene.offsetX||0);stage.dataset.offsetY=String(scene.offsetY||0);
+ app.querySelector('.game-shell')?.classList.toggle('rich-wide',layout==='landscape'&&richWideIds.has(currentToy));
+ if(changed){stage.dataset.layout=layout;stage.innerHTML=scene.art;}
+}
 window.addEventListener('resize',responsiveStage);
 window.visualViewport?.addEventListener('resize',responsiveStage);
 window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPrompt=ev;document.querySelector('#install-button')?.classList.add('available');});
