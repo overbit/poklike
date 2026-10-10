@@ -15,7 +15,7 @@ An independent, free, calm creative playroom inspired by the **observable mechan
 ## Non-negotiable behavior
 - All 25 toys playable after an initial complete download and service-worker cache verification.
 - On portrait phone and tablet, each toy has a **purpose-composed portrait scene** (480x840 logical units) instead of a cropped 960x600 landscape world.
-- Landscape and desktop retain an interactive wide world; no feature hidden exclusively behind a camera arrow.
+- Landscape and desktop retain interactive wide worlds. Cooking, Code Factory and Phonics have bespoke wide scenes too; no toy depends on a camera arrow.
 - Primary play is through direct tapping, drawing, dragging, sliders and exploratory actions inside the scene; no bottom toolbar covering the play area in portrait.
 - Adult-only gate for device sound/motion and reset/export/import; no analytics, accounts, ads, subscriptions or server.
 - Semantic atomic commits, conventional PR titles and automated browser tests, including service-worker offline reopening.
