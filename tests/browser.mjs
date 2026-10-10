@@ -23,11 +23,25 @@ async function until(expression,message,tries=80){for(let i=0;i<tries;i++){try{i
 async function snapshot(name){const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(join(artifacts,name+'.png'),Buffer.from(shot.data,'base64'));}
 function mouse(type,x,y,buttons=0){return send('Input.dispatchMouseEvent',{type,x,y,button:type==='mouseMoved'?'none':'left',buttons,clickCount:1});}
 async function start(){
- const port=await freePort(),remote=await freePort();tmp=mkdtempSync(join(tmpdir(),'poklike-browser-'));
+ const port=await freePort();tmp=mkdtempSync(join(tmpdir(),'poklike-browser-'));
  server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1','--directory',basePath==='/'?root:resolve(root,'..')],{stdio:'ignore'});
- chrome=spawn(process.env.CHROMIUM||'/usr/bin/chromium',['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-allow-origins=*',`--remote-debugging-port=${remote}`,`--user-data-dir=${tmp}`,'--window-size=1280,900','about:blank'],{stdio:'ignore'});
- await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');if(!r.ok)throw Error(r.status);return r.json();});
- const pages=await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');return r.json();});
+ // Headless Chromium occasionally exits before CDP binds on busy CI workers.
+ // Give it a fresh profile and a new port on each bounded retry.
+ let pages,chromeErrors=[];
+ for(let attempt=0;attempt<3;attempt++){
+  const remote=await freePort();
+  chrome=spawn(process.env.CHROMIUM||'/usr/bin/chromium',['--headless=new','--no-sandbox','--no-zygote','--disable-gpu','--disable-extensions','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--no-default-browser-check','--remote-allow-origins=*',`--remote-debugging-port=${remote}`,`--user-data-dir=${join(tmp,'profile-'+attempt)}`,'--window-size=1280,900','about:blank'],{stdio:['ignore','ignore','pipe']});
+  let stderr='';chrome.stderr?.on('data',chunk=>{stderr=(stderr+chunk.toString()).slice(-1500);});
+  try{
+   pages=await retry(async()=>{const res=await fetch('http://127.0.0.1:'+remote+'/json');if(!res.ok)throw Error(String(res.status));return res.json();},75);
+   if(pages.some(p=>p.type==='page'&&p.webSocketDebuggerUrl))break;
+   throw Error('No debuggable tab');
+  }catch(error){
+   chromeErrors.push('launch '+(attempt+1)+': '+String(error)+' '+stderr);
+   chrome.kill('SIGTERM');await wait(400);pages=null;
+  }
+ }
+ if(!pages)throw Error('Chromium failed to start after 3 attempts: '+chromeErrors.join(' | '));
  const page=pages.find(p=>p.type==='page');assert.ok(page?.webSocketDebuggerUrl);
  ws=new WebSocket(page.webSocketDebuggerUrl);
  await new Promise((res,rej)=>{ws.addEventListener('open',res,{once:true});ws.addEventListener('error',rej,{once:true});});
