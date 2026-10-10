@@ -1,4 +1,5 @@
 import {toys,ids,toyById,initialState,renderToy,interact,moveDrag,tickToy,C} from './toys.js';
+import {renderPortraitToy,toModel,toPortrait} from './portrait-toys.js';
 
 const KEY='poklike-state-v1', PREF='poklike-prefs-v1';
 const app=document.querySelector('#app');
@@ -12,8 +13,9 @@ const preferences={sound:true,reducedMotion:matchMedia('(prefers-reduced-motion:
 preferences.sound=preferences.sound!==false;
 preferences.reducedMotion=preferences.reducedMotion===true;
 let offline={phase:'loading',message:'Preparing offline play…'};
-let currentToy=null,dragging=null,ctx=null,installPrompt=null,visited=new Set();
-const camera={x:null,y:null,width:960,height:600,fit:false};
+let currentToy=null,ctx=null,installPrompt=null,visited=new Set();
+const gestures=new Map();
+let sliderIgnoreClickUntil=0;
 const safeId=id=>ids.has(id)?id:null;
 const boundedNumber=(value,fallback,min=-9999,max=9999)=>typeof value==='number'&&Number.isFinite(value)?Math.max(min,Math.min(max,value)):fallback;
 function sanitized(id,input){
@@ -56,7 +58,7 @@ function status(){return `<span class="connection-status ${offline.phase==='read
 function brand(){return `<span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Poklike`;}
 function refreshStatus(){document.querySelectorAll('.connection-status').forEach(el=>{el.textContent=offline.message;el.className='connection-status '+(offline.phase==='ready'?'ready':offline.phase==='error'?'error':'');});}
 function gallery(){
- currentToy=null;dragging=null;document.body.classList.remove('playing');document.title='Poklike — A little world of play';
+ currentToy=null;gestures.clear();document.body.classList.remove('playing');document.title='Poklike — A little world of play';
  app.innerHTML=`<main class="shell">
  <header class="topbar"><a class="brand" href="#/" aria-label="Poklike home">${brand()}</a><div class="toolbar-actions">${status()}<button class="icon-button" data-adult aria-label="Grown-ups area">${svgIcon('adult')}</button></div></header>
  <section class="hero" aria-label="Welcome"><div class="hero-copy"><h1>Little worlds,<br><em>big wonder.</em></h1><p>A cozy collection of tiny adventures. Make music, build anything, draw a new world and follow your curiosity. There's no right way to play.</p></div><div class="hero-display" aria-hidden="true"><div class="disk"></div><div class="cone"></div><div class="block"></div><div class="dot"></div></div></section>
@@ -71,111 +73,129 @@ function gallery(){
  <footer class="home-footer"><span class="disclaimer">Made as an independent, free, original playroom. No ads, accounts, tracking or network needed once the app says it's ready offline.</span><div><button class="plain-button" data-adult>Grown-ups & settings</button><button id="install-button" class="plain-button ${installPrompt?'available':''}" data-install>Install on this device</button></div></footer>
  </main>`;
 }
-function stageMarkup(id){return `<svg class="toy-canvas" data-stage="${id}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" preserveAspectRatio="xMidYMid meet" aria-label="Interactive ${escapeHtml(toyById(id).title)} play area" role="group">${renderToy(id,loadState(id)).art}</svg>`;}
+function isPortraitPlay(){
+ return matchMedia('(max-width: 1024px) and (orientation: portrait)').matches;
+}
+function buildScene(id){
+ return isPortraitPlay()?renderPortraitToy(id,loadState(id)):{art:renderToy(id,loadState(id)).art,viewBox:'0 0 960 600'};
+}
+function stageMarkup(id){
+ const scene=buildScene(id),portrait=isPortraitPlay();
+ return `<svg class="toy-canvas" data-stage="${id}" data-layout="${portrait?'portrait':'landscape'}" xmlns="http://www.w3.org/2000/svg" viewBox="${scene.viewBox}" preserveAspectRatio="none" aria-label="Interactive ${escapeHtml(toyById(id).title)} play area" role="group">${scene.art}</svg>`;
+}
 function showToy(id){
  id=safeId(id);if(!id){location.hash='#/';return;}
- currentToy=id;dragging=null;visited.add(id);camera.x=null;camera.y=null;camera.fit=false;document.body.classList.add('playing');
- const toy=toyById(id),st=loadState(id),scene=renderToy(id,st);
+ currentToy=id;gestures.clear();visited.add(id);document.body.classList.add('playing');
+ const toy=toyById(id),scene=renderToy(id,loadState(id));
  document.title=toy.title+' — Poklike';
  app.innerHTML=`<main class="game-shell">
   <header class="game-header"><button class="home-link" data-home aria-label="Return to all toys">${svgIcon('back')}<span>All toys</span></button><div class="game-heading"><h1>${escapeHtml(toy.title)}</h1><p>${escapeHtml(toy.tagline)}</p></div><button class="game-reset" data-reset aria-label="Reset this toy">${svgIcon('reset')}<span>Start fresh</span></button></header>
   <section class="game-content" aria-label="${escapeHtml(toy.title)} playground"><div class="stage-wrap">${stageMarkup(id)}</div>
-   <div class="camera-controls" aria-label="Move around the playground" hidden><button class="camera-arrow" type="button" data-pan="-1" aria-label="Look left">&#x2039;</button><button class="camera-arrow" type="button" data-pan="1" aria-label="Look right">&#x203a;</button></div>
-   <button class="camera-fit" type="button" data-fit aria-label="Show the whole playground" aria-pressed="false">See all</button>
    <div class="play-controls" aria-label="${escapeHtml(toy.title)} tools">${scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join('')}</div>
-   <p class="game-help">${escapeHtml(scene.hint)}</p><p class="rotate-hint">Use the arrows to explore, or tap See all for the entire scene.</p></section>
+   <p class="game-help">${escapeHtml(scene.hint)}</p></section>
  </main>`;
  const stage=app.querySelector('[data-stage]');
  stage.addEventListener('pointerdown',pointerDown);
  stage.addEventListener('pointermove',pointerMove);
  stage.addEventListener('pointerup',pointerUp);
  stage.addEventListener('pointercancel',pointerUp);
- requestAnimationFrame(refreshCamera);
 }
-// Camera viewBoxes keep the 960x600 interactive art large without letterboxing.
-// On portrait screens, the full-height scene is horizontally explorable.
-function refreshCamera(){
- const stage=app.querySelector('[data-stage]');if(!stage||!currentToy)return;
- const nav=app.querySelector('.camera-controls'),fitButton=app.querySelector('[data-fit]');
- const immersive=matchMedia('(max-width: 900px)').matches;
- if(!immersive||camera.fit){stage.setAttribute('viewBox','0 0 960 600');stage.setAttribute('preserveAspectRatio','xMidYMid meet');if(nav)nav.hidden=true;if(fitButton){fitButton.setAttribute('aria-pressed',String(camera.fit));fitButton.textContent=camera.fit?'Fill screen':'See all';}return;}
- const r=stage.getBoundingClientRect();if(r.width<1||r.height<1)return;
- const aspect=r.width/r.height;camera.width=Math.min(960,600*aspect);camera.height=Math.min(600,960/aspect);
- const maxX=960-camera.width,maxY=600-camera.height;
- camera.x=Math.max(0,Math.min(maxX,camera.x===null?maxX/2:camera.x));
- camera.y=Math.max(0,Math.min(maxY,camera.y===null?maxY/2:camera.y));
- stage.setAttribute('viewBox',`${camera.x} ${camera.y} ${camera.width} ${camera.height}`);
- stage.setAttribute('preserveAspectRatio','none');
- if(nav){nav.hidden=maxX<8&&maxY<8;nav.classList.toggle('vertical',maxY>8&&maxX<8);nav.querySelector('[data-pan="-1"]').disabled=(maxX>8?camera.x:camera.y)<1;nav.querySelector('[data-pan="1"]').disabled=(maxX>8?maxX-camera.x:maxY-camera.y)<1;}
- if(fitButton){fitButton.setAttribute('aria-pressed','false');fitButton.textContent='See all';}
+function updateStage(){
+ if(!currentToy||gestures.size)return;
+ const stage=app.querySelector('[data-stage]');
+ if(stage)stage.innerHTML=buildScene(currentToy).art;
 }
-function panCamera(direction){
- if(!currentToy||camera.fit)return;
- if(camera.width<959)camera.x=Math.max(0,Math.min(960-camera.width,(camera.x||0)+direction*camera.width*.76));
- else if(camera.height<599)camera.y=Math.max(0,Math.min(600-camera.height,(camera.y||0)+direction*camera.height*.76));
- refreshCamera();
-}
-function updateStage(){if(!currentToy||dragging)return;const svg=app.querySelector('[data-stage]');if(svg)svg.innerHTML=renderToy(currentToy,loadState(currentToy)).art;}
 function handleAction(action){
  if(!currentToy)return;
  const st=loadState(currentToy);interact(currentToy,st,action);
- if(preferences.sound)sound(180+(st.turn%6)*43, .095);
- save();
+ if(preferences.sound){
+  if(currentToy==='musical-blobs')sound([262,330,392,523][st.mode%4],.24);
+  else sound(180+(st.turn%6)*43,.095);
+ }
+ save();updateStage();
  const scene=renderToy(currentToy,st);
- updateStage();
  const controls=app.querySelector('.play-controls');
  if(controls)controls.innerHTML=scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join('');
 }
-function point(ev,svg){const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const ctm=svg.getScreenCTM();if(!ctm)return {x:0,y:0};const p=pt.matrixTransform(ctm.inverse());return {x:p.x,y:p.y};}
+function point(ev,svg){
+ const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
+ const ctm=svg.getScreenCTM();if(!ctm)return {x:0,y:0};
+ const p=pt.matrixTransform(ctm.inverse());return {x:p.x,y:p.y};
+}
 function pointerDown(ev){
- if(!currentToy||dragging)return;
+ if(!currentToy||gestures.has(ev.pointerId))return;
  const svg=ev.currentTarget,at=point(ev,svg),target=ev.target instanceof Element?ev.target:null;
+ const portrait=isPortraitPlay();
  const movable=target?.closest('[data-drag]');
  if(movable){
-  const trans=movable.getAttribute('transform')||'';const match=trans.match(/translate\(([-\d.]+)[ ,]([-\d.]+)\)/);
+  const match=(movable.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]([-\d.]+)\)/);
   const x=Number(match?.[1]||0),y=Number(match?.[2]||0);
-  dragging={kind:'move',key:movable.dataset.drag,element:movable,origin:at,offset:{x:x-at.x,y:y-at.y},x,y,moved:false,id:ev.pointerId};
+  gestures.set(ev.pointerId,{kind:'move',key:movable.dataset.drag,element:movable,offset:{x:x-at.x,y:y-at.y},x,y,portrait});
   try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();return;
  }
- // On phones the background is a natural camera pan surface.
- // Keep object drags, tap actions and finger drawing independent.
- if(currentToy!=='drawing'&&!camera.fit&&(camera.width<959||camera.height<599)&&!target?.closest('[data-act]')){
-  dragging={kind:'camera',id:ev.pointerId,startX:ev.clientX,startY:ev.clientY,x:camera.x||0,y:camera.y||0};
+ const slider=portrait?target?.closest('[data-slider]'):null;
+ if(slider&&currentToy==='busy-board'){
+  const index=Number(slider.dataset.slider);
+  gestures.set(ev.pointerId,{kind:'slider',index,element:slider});
+  setSlider(index,at.x,slider);
   try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();return;
  }
- if(currentToy==='drawing'&&!target?.closest('[data-act]')&&at.y<478&&at.y>35&&at.x>60&&at.x<900){
-  const st=loadState('drawing');
+ if(currentToy==='drawing'&&!target?.closest('[data-act]')){
+  const inBounds=portrait?at.x>22&&at.x<457&&at.y>177&&at.y<710:at.y<478&&at.y>35&&at.x>60&&at.x<900;
+  if(!inBounds)return;
+  const st=loadState('drawing'),model=portrait?toModel(at):at;
   if(st.strokes.length>=150)st.strokes.shift();
-  const line={c:st.color,w:st.width,points:[[at.x,at.y]]};st.strokes.push(line);
-  const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('fill','none');path.setAttribute('stroke',([C.coral,C.sun,C.teal,C.blue,C.plum,C.leaf])[st.color]);path.setAttribute('stroke-width',String(st.width));path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');svg.appendChild(path);
-  dragging={kind:'draw',line,path,id:ev.pointerId,moved:false};
+  const line={c:st.color,w:st.width,points:[[model.x,model.y]]};st.strokes.push(line);
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('fill','none');path.setAttribute('stroke',([C.coral,C.sun,C.teal,C.blue,C.plum,C.leaf])[st.color]);
+  path.setAttribute('stroke-width',String(portrait?st.width*.7:st.width));
+  path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');svg.appendChild(path);
+  gestures.set(ev.pointerId,{kind:'draw',line,path,portrait});
   try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();
  }
 }
+function setSlider(index,x,element){
+ if(index<0||index>1)return;
+ const value=Math.max(0,Math.min(1,(x-64)/350));
+ loadState('busy-board').sliders[index]=value;
+ element.querySelector('[data-slider-fill]')?.setAttribute('width',String(350*value));
+ element.querySelectorAll('[data-slider-knob]').forEach(knob=>knob.setAttribute('cx',String(64+350*value)));
+ sliderIgnoreClickUntil=performance.now()+450;
+}
 function pointerMove(ev){
- if(!dragging||ev.pointerId!==dragging.id)return;
+ const d=gestures.get(ev.pointerId);if(!d)return;
  const svg=ev.currentTarget,at=point(ev,svg);
- if(dragging.kind==='camera'){
-  const x=dragging.x-(ev.clientX-dragging.startX)*camera.width/Math.max(1,svg.clientWidth);
-  const y=dragging.y-(ev.clientY-dragging.startY)*camera.height/Math.max(1,svg.clientHeight);
-  camera.x=Math.max(0,Math.min(960-camera.width,x));
-  camera.y=Math.max(0,Math.min(600-camera.height,y));
-  refreshCamera();ev.preventDefault();return;
+ if(d.kind==='slider')setSlider(d.index,at.x,d.element);
+ else if(d.kind==='draw'){
+  const inBounds=d.portrait?at.x>22&&at.x<457&&at.y>177&&at.y<710:at.x>=60&&at.x<=900&&at.y>=35&&at.y<=478;
+  if(inBounds&&d.line.points.length<1500){
+   const m=d.portrait?toModel(at):at;d.line.points.push([m.x,m.y]);
+   d.path.setAttribute('d',d.line.points.map((p,i)=>{const pos=d.portrait?toPortrait({x:p[0],y:p[1]}):{x:p[0],y:p[1]};return `${i?'L':'M'}${pos.x} ${pos.y}`;}).join(' '));
+  }
+ }else if(d.kind==='move'){
+  const range=d.portrait?{left:48,right:432,top:145,bottom:725}:{left:60,right:885,top:85,bottom:520};
+  d.x=Math.max(range.left,Math.min(range.right,at.x+d.offset.x));
+  d.y=Math.max(range.top,Math.min(range.bottom,at.y+d.offset.y));
+  d.element.setAttribute('transform',`translate(${d.x} ${d.y})`);
  }
- if(dragging.kind==='draw'){
-  const line=dragging.line;if(line.points.length<1500&&at.x>=60&&at.x<=900&&at.y>=35&&at.y<=478){line.points.push([at.x,at.y]);dragging.moved=true;dragging.path.setAttribute('d',line.points.map((p,i)=>`${i?'L':'M'}${p[0]} ${p[1]}`).join(' '));}
- }else{
-  dragging.x=Math.max(60,Math.min(885,at.x+dragging.offset.x));dragging.y=Math.max(85,Math.min(520,at.y+dragging.offset.y));
-  if(Math.hypot(at.x-dragging.origin.x,at.y-dragging.origin.y)>6)dragging.moved=true;
-  dragging.element.setAttribute('transform',`translate(${dragging.x} ${dragging.y})`);
- }ev.preventDefault();
+ ev.preventDefault();
 }
 function pointerUp(ev){
- if(!dragging||ev.pointerId!==dragging.id)return;
- const d=dragging;dragging=null;
- if(d.kind==='camera'){ev.preventDefault();return;}
- if(d.kind==='move'){moveDrag(currentToy,loadState(currentToy),d.key,d.x,d.y);if(preferences.sound)sound(245+((d.key.length*41)%340),.13);}
- else if(d.kind==='draw'&&d.line.points.length===1)d.line.points.push([d.line.points[0][0]+.5,d.line.points[0][1]+.5]);
+ const d=gestures.get(ev.pointerId);if(!d)return;
+ gestures.delete(ev.pointerId);
+ if(d.kind==='move'){
+  const model=d.portrait?toModel({x:d.x,y:d.y}):{x:d.x,y:d.y};
+  const state=loadState(currentToy),before=state.collisions||0;
+  moveDrag(currentToy,state,d.key,model.x,model.y);
+  if(preferences.sound){
+   sound(245+(d.key.length*41)%340,.12);
+   if(currentToy==='musical-blobs'&&state.collisions>before){
+    sound(392,.31);setTimeout(()=>sound(523,.22),110);
+   }
+  }
+ }else if(d.kind==='draw'&&d.line.points.length===1){
+  const [x,y]=d.line.points[0];d.line.points.push([x+.5,y+.5]);
+ }
  try{ev.currentTarget.releasePointerCapture(ev.pointerId);}catch{}
  save();updateStage();ev.preventDefault();
 }
@@ -253,8 +273,6 @@ async function prepareOffline(){
 app.addEventListener('click',ev=>{
  const target=ev.target instanceof Element?ev.target:null;if(!target)return;
  if(target.closest('[data-home]')){location.hash='#/';return;}
- const pan=target.closest('[data-pan]');if(pan&&currentToy){panCamera(Number(pan.dataset.pan));return;}
- if(target.closest('[data-fit]')&&currentToy){camera.fit=!camera.fit;refreshCamera();return;}
  const toy=target.closest('[data-toy]');if(toy){location.hash='#/toy/'+toy.dataset.toy;return;}
  if(target.closest('[data-reset]')&&currentToy){states[currentToy]=initialState(currentToy);save();showToy(currentToy);return;}
  if(target.closest('[data-adult]')){grownUps();return;}
@@ -264,7 +282,7 @@ app.addEventListener('click',ev=>{
   else dialog('<h2>Keep your playroom handy</h2><p>On an iPhone or iPad, open the Share menu in Safari and choose Add to Home Screen. On Android, use your browser menu and choose Install app or Add to Home screen.</p><p>Wait for Ready offline before disconnecting from the internet.</p>');
   return;
  }
- const control=target.closest('[data-act]');if(control&&currentToy){handleAction(control.dataset.act);}
+ const control=target.closest('[data-act]');if(control&&currentToy){if(control.closest('[data-slider]')&&performance.now()<sliderIgnoreClickUntil)return;handleAction(control.dataset.act);}
 });
 document.addEventListener('keydown',ev=>{
  if(ev.key==='Escape'&&!document.querySelector('dialog[open]')&&currentToy){location.hash='#/';return;}
@@ -273,18 +291,20 @@ document.addEventListener('keydown',ev=>{
   ev.preventDefault();
   const [x,y]=((drag.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]([\d.]+)\)/)||[]).slice(1).map(Number);
   const dx=ev.key==='ArrowRight'?20:ev.key==='ArrowLeft'?-20:0,dy=ev.key==='ArrowDown'?20:ev.key==='ArrowUp'?-20:0;
-  if(Number.isFinite(x)&&Number.isFinite(y)&&moveDrag(currentToy,loadState(currentToy),drag.dataset.drag,x+dx,y+dy)){save();updateStage();}
+  if(Number.isFinite(x)&&Number.isFinite(y)){const p=isPortraitPlay()?toModel({x:x+dx,y:y+dy}):{x:x+dx,y:y+dy};if(moveDrag(currentToy,loadState(currentToy),drag.dataset.drag,p.x,p.y)){save();updateStage();}}
  }
  const control=ev.target instanceof Element?ev.target.closest('svg [data-act]'):null;
  if(control&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();handleAction(control.dataset.act);}
 });
 window.addEventListener('hashchange',route);
-window.addEventListener('resize',()=>{if(currentToy)requestAnimationFrame(refreshCamera);});
-window.visualViewport?.addEventListener('resize',()=>{if(currentToy)requestAnimationFrame(refreshCamera);});
+let currentLayout='';
+function responsiveStage(){if(!currentToy)return;const stage=app.querySelector('[data-stage]');if(!stage)return;const layout=isPortraitPlay()?'portrait':'landscape';if(stage.dataset.layout===layout)return;stage.dataset.layout=layout;const scene=buildScene(currentToy);stage.setAttribute('viewBox',scene.viewBox);stage.innerHTML=scene.art;}
+window.addEventListener('resize',responsiveStage);
+window.visualViewport?.addEventListener('resize',responsiveStage);
 window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPrompt=ev;document.querySelector('#install-button')?.classList.add('available');});
 window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySelector('#install-button')?.classList.remove('available');});
 setInterval(()=>{
- if(!currentToy||dragging||preferences.reducedMotion&&['shapes'].includes(currentToy))return;
+ if(!currentToy||gestures.size||preferences.reducedMotion&&['shapes'].includes(currentToy))return;
  const st=loadState(currentToy),notes=tickToy(currentToy,st);
  if(notes!==null){if(notes.length&&preferences.sound)notes.forEach((f,i)=>setTimeout(()=>sound(f,.18),i*65));updateStage();}
 },350);

@@ -59,7 +59,7 @@ export function initialState(id){
  switch(id){
   case 'drawing':return {...base,strokes:[],width:9};
   case 'busy-board':return {...base,switches:[false,true,false,true],sliders:[.2,.7],dials:[0,1]};
-  case 'musical-blobs':return {...base,blobs:[{x:210,y:230},{x:400,y:350},{x:650,y:230},{x:780,y:420}]};
+  case 'musical-blobs':return {...base,collisions:0,blobs:[{x:210,y:230},{x:400,y:350},{x:650,y:230},{x:780,y:420}]};
   case 'busy-book':return {...base,page:0,touched:[]};
   case 'town':return {...base,vehicle:{x:100,y:352},people:[{x:520,y:380},{x:760,y:440}]};
   case 'house':return {...base,room:0,light:true,figure:{x:675,y:360}};
@@ -341,6 +341,7 @@ export function interact(id,s,action){
  case 'busy-board':
   if(a==='switch')s.switches[n]=!s.switches[n];
   if(a==='slide')s.sliders[n]=((s.sliders[n]||0)+.25)%1.01;
+  if(a==='dial'&&Number.isInteger(n)&&n>=0&&n<s.dials.length)s.dials[n]=(s.dials[n]+1)%4;
   break;
  case 'musical-blobs':
   if(a==='tone')s.mode=(s.mode+1)%4;
@@ -449,7 +450,7 @@ export function interact(id,s,action){
 export function moveDrag(id,s,key,x,y){
  x=Math.max(60,Math.min(885,v(x)));y=Math.max(85,Math.min(520,v(y)));
  const [type,num]=key.split(':'),n=Number(num);
- if(id==='musical-blobs'&&type==='blob'&&s.blobs[n]){s.blobs[n]={x,y};return true;}
+ if(id==='musical-blobs'&&type==='blob'&&s.blobs[n]){s.blobs[n]={x,y};if(s.blobs.some((p,i)=>i!==n&&Math.hypot(p.x-x,p.y-y)<118))s.collisions=(s.collisions||0)+1;return true;}
  if(id==='town'){
   if(type==='vehicle'){s.vehicle={x,y};return true;}
   if(type==='person'&&s.people[n]){s.people[n]={x,y};return true;}
