@@ -347,12 +347,37 @@ function radio(s){
   pill(106,738,272,s.playing?'Stop the music':'Start the music','play'));
 }
 function puzzle(s){
- const tiles=s.tiles.slice(0,6).map((obj,i)=>{
- const at=toPortrait(obj);return drag(`tile:${i}`,Math.min(409,Math.max(63,at.x)),Math.max(215,Math.min(735,at.y+92)),r(-53,-50,106,100,colors[i],19)+c(0,0,19,C.paper),'Move puzzle piece');
+ const motif=i=>{
+  if(i===0)return c(0,0,22,C.sun)+Array.from({length:8},(_,j)=>l(Math.cos(j*Math.PI/4)*30,Math.sin(j*Math.PI/4)*30,Math.cos(j*Math.PI/4)*41,Math.sin(j*Math.PI/4)*41,C.paper,5)).join('');
+  if(i===1)return r(-7,-5,15,38,'#8b6d55',5)+c(0,-22,31,C.leaf)+c(-16,-12,17,C.teal);
+  if(i===2)return flower(0,-6,C.coral,.65);
+  if(i===3)return path('M-41 3 L41 3 L26 30 L-22 30 Z',C.coral)+path('M-3 -45 V3 H34 Z',C.paper)+l(-3,-44,-3,30,C.ink,3);
+  if(i===4)return path('M-42 35 L-4 -36 L38 35 Z',C.paper)+path('M-19 -5 L-3 -36 L15 -6 Z','#c1dfe1');
+  return c(0,1,28,C.blue)+path('M24 0 L47 -25 L47 26 Z',C.teal)+c(-10,-8,4,C.ink);
+ };
+ const slots=[0,1,2,3,4,5].map(i=>{
+  const row=Math.floor(i/3),col=i%3,tx=70+col*116.5,ty=262+row*227;
+  return r(tx,ty,105,91,'#faf7ec',16,`stroke="#a9bcbc" stroke-width="3" stroke-dasharray="8 8"`)+
+   `<g opacity=".23" transform="translate(${tx+52} ${ty+45}) scale(.75)">${motif(i)}</g>`;
  }).join('');
- return decorated('#e8ecdf',title('Find a place for every piece')+
- [0,1,2,3,4,5].map(i=>r(70+(i%3)*116.5,262+Math.floor(i/3)*227,105,91,C.paper,15,`stroke="#bfcbc7" stroke-width="3" stroke-dasharray="8 7"`)).join('')+
- tiles+pill(145,741,190,'Mix the pieces','shuffle'));
+ const tiles=s.tiles.slice(0,6).map((obj,i)=>{
+  const at=toPortrait(obj),tx=244+(i%3)*233,ty=151+Math.floor(i/3)*162;
+  const placed=Math.abs(obj.x-tx)<6&&Math.abs(obj.y-ty)<6;
+  const x=Math.max(60,Math.min(420,at.x)),y=Math.max(215,Math.min(776,at.y+92));
+  return drag(`tile:${i}`,x,y,
+   r(-51,-44,102,90,colors[i],17,`stroke="${placed?C.ink:'rgba(255,255,255,.6)'}" stroke-width="${placed?5:2}"`)+
+   motif(i)+
+   (placed?c(37,-31,9,C.sun):'')+
+   r(-55,-48,110,98,'transparent',15),
+   `Move illustrated picture piece ${i+1} to matching spot`);
+ }).join('');
+ const finished=s.tiles.slice(0,6).every((obj,i)=>Math.abs(obj.x-(244+(i%3)*233))<6&&Math.abs(obj.y-(151+Math.floor(i/3)*162))<6);
+ return decorated('#eaf0e6',
+  title('Make your own little picture')+
+  pill(144,172,193,'Mix the pieces','shuffle','#f9f5e9')+
+  r(33,243,414,365,'#d7e5dc',28)+slots+
+  finished?t(240,625,'All the pieces found a home!',19,C.teal):t(240,625,'Drag each piece to its shadow',19,C.muted)+
+  tiles);
 }
 function dinos(s){
  const at=toPortrait(s.dino),hatch=s.egg%4;

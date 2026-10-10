@@ -71,7 +71,7 @@ export function initialState(id){
   case 'marble-machine':return {...base,marble:0,valves:[false,false,true],running:true};
   case 'sequencer':return {...base,steps:Array.from({length:4},(_,i)=>Array.from({length:8},(_,j)=>i===j%4)),playing:false,beat:0};
   case 'radio':return {...base,station:0,playing:false,volume:3};
-  case 'world-puzzle':return {...base,tiles:[{x:140,y:430},{x:420,y:420},{x:690,y:430},{x:220,y:520},{x:520,y:520},{x:780,y:520}]};
+  case 'world-puzzle':return {...base,tiles:[{x:180,y:413},{x:480,y:413},{x:780,y:413},{x:180,y:477},{x:480,y:477},{x:780,y:477}]};
   case 'dinosaurs':return {...base,weather:0,egg:0,dino:{x:340,y:370}};
   case 'connect-the-dots':return {...base,connected:0,shape:0};
   case 'shops':return {...base,shop:0,basket:[]};
