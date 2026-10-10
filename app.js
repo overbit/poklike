@@ -86,7 +86,7 @@ function wideViewBox(id){
  return `0 ${top} 960 ${Math.round(height)}`;
 }
 function buildScene(id){
- if(isPortraitPlay())return renderPortraitToy(id,loadState(id));
+ if(isPortraitPlay())return renderPortraitToy(id,loadState(id),innerWidth/Math.max(1,innerHeight));
  const wide=renderWideToy(id,loadState(id))||renderToy(id,loadState(id));
  return {...wide,viewBox:wideViewBox(id)};
 }
