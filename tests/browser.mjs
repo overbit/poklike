@@ -75,7 +75,7 @@ async function run(){
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
- const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v7');return (await c.keys()).length})()`);
+ const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v8');return (await c.keys()).length})()`);
  verify(cached>=12,'all original and responsive assets are precached');
  await snapshot('collection-desktop');
  for(const toy of toys){
