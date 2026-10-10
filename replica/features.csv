@@ -9,7 +9,7 @@ Number Journey,number-journey,must,public catalogue theme; exact mechanics to ve
 Shapes,shapes,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
 Dress-Up,dress-up,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
 Dinosaurs,dinosaurs,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
-World Puzzle,world-puzzle,must,public catalogue theme; exact mechanics to verify,partial,Portrait snap positions now align with model positions; touch-release state round-trip test; exact original puzzle visuals unverified.
+World Puzzle,world-puzzle,must,public catalogue theme; exact mechanics to verify,partial,"Portrait snap positions now align with model positions; touch-release state round-trip test; exact original puzzle visuals unverified."
 Radio,radio,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
 Islands,islands,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
 Connect The Dots,connect-the-dots,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
@@ -19,11 +19,11 @@ Sequencer,sequencer,must,public catalogue theme; exact mechanics to verify,parti
 Forest,forest,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
 House,house,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
 Silly Blocks,silly-blocks,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
-Town,town,must,public catalogue theme; exact mechanics to verify,partial,Four independently tappable venues and residents/vehicle drag-to-visit; original map size, location count and exact interior behaviours unverified.
+Town,town,must,public catalogue theme; exact mechanics to verify,partial,"Four independently tappable venues and residents/vehicle drag-to-visit; original map size, location count and exact interior behaviours unverified."
 Drawing,drawing,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
-Busy Board,busy-board,must,public catalogue theme; exact mechanics to verify,partial,Original mechanics interpretation expanded: linked gears, switches, indicator, independent sliders with multi-touch; precise original depth and video parity unverified.
-Musical Blobs,musical-blobs,must,public catalogue theme; exact mechanics to verify,partial,Distinct draggable audio shapes, contact tones, harmonic collisions; original tuning/timbres and artwork unverified.
-Busy Book,busy-book,must,public catalogue theme; exact mechanics to verify,partial,Five illustrated pages with direct toggleable discoveries, swipe navigation and keyboard navigation; exact original page contents unverified.
+Busy Board,busy-board,must,public catalogue theme; exact mechanics to verify,partial,"Original mechanics interpretation expanded: linked gears, switches, indicator, independent sliders with multi-touch; precise original depth and video parity unverified."
+Musical Blobs,musical-blobs,must,public catalogue theme; exact mechanics to verify,partial,"Distinct draggable audio shapes, contact tones, harmonic collisions; original tuning/timbres and artwork unverified."
+Busy Book,busy-book,must,public catalogue theme; exact mechanics to verify,partial,"Five illustrated pages with direct toggleable discoveries, swipe navigation and keyboard navigation; exact original page contents unverified."
 Offline-first full precache,shell,must,offline supported,partial,Implemented; browser/physical-device verification pending
 Adult-gated local settings,shell,must,adult area publicly documented,partial,Implemented; browser/physical-device verification pending
 Save/resume/reset,shell,must,original storage behaviour unverified,partial,Implemented; browser/physical-device verification pending
