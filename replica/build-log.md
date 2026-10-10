@@ -33,3 +33,8 @@ Shell: PWA install, full-cache service worker verification, offline deep-link re
 2026-10-10 | S02-S26 | responsive portrait renderer introduced for all 25, with direct stage actions instead of cropped landscape camera. Busy Board dial + slider input, Musical Blobs collision feedback, portrait drawing model coordinate mapping. Original-video parity remains partial, pending user recordings. Tests: Node unit + Chromium offline/responsive in GitHub Actions; physical-device check outstanding.
 2026-10-10 | Deepened Cooking guest/table and kitchen states, Code Factory continuous loop/director/crates/cleanup, and Phonics draggable grapheme slots from official gameplay descriptions. Broader scene depth still partial and video frames unverified.
 2026-10-10 | Added wide companion art for Cooking, Code Factory and Phonics to avoid regressing to old placeholder mechanics after rotation. UI now reserves iOS safe-area edges for portrait stage.
+
+2026-10-10 | Responsive gameplay iteration | Added an aspect-preserving scene world across all 25 portrait toys, removed ellipse deformation, and fixed touch drag persistence including puzzle snap positions. 
+2026-10-10 | Busy Board / Busy Book | Meshing gears, powered indicator, independently operable sliders, illustrated book discoveries, reversible touch changes and swipe/keyboard page turns. **Partial** against commercial reference.
+2026-10-10 | Musical Blobs / Town | Four distinct playable instrument shapes with collision chords and four large touchable town venues with draggable visitors. **Partial** against commercial reference.
+2026-10-10 | Source limitation | V01/V02 YouTube frames unavailable to the execution environment; exact footage matching not asserted. Android/iOS real-hardware checks still pending.
