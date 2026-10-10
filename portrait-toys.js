@@ -233,12 +233,20 @@ function numbers(s){
   pill(44,735,178,'Less','minus')+pill(262,735,178,'More','plus'));
 }
 function phonics(s){
- const words=['MOON','FISH','SUN','TREE','BIRD','BOAT','STAR'];const word=words[s.word%words.length];
- return decorated('#f9f1e5',title('Little sounds')+
-  c(240,340,124,C.sun)+face(240,340,1.7)+
-  word.split('').map((ch,i)=>action(`letter:${i}`,28+i*(418/word.length),555,405/word.length,105,
-  r(28+i*(418/word.length),555,405/word.length-5,103,i===s.letter?C.teal:C.paper,18)+t(26+i*(418/word.length)+(405/word.length)/2,605,ch,35,i===s.letter?C.paper:C.ink),`Hear letter ${ch}`)).join('')+
-  pill(98,728,284,'Another word','word'));
+ // Match the observed sound-slot pattern with movable grapheme units.
+ const words=[['M','OO','N'],['F','I','SH'],['S','U','N'],['T','R','EE'],['B','IR','D']];
+ const symbols=['MOON','FISH','SUN','TREE','BIRD'];
+ const word=words[s.word%words.length],finished=s.placed.every(Boolean);
+ const pieces=word.map((ch,i)=>{
+  const x=114+i*126,y=s.placed[i]?566:261;
+  return drag(`phoneme:${i}`,x,y,r(-46,-43,92,87,s.placed[i]?C.teal:C.paper,17)+t(0,0,ch,32,s.placed[i]?C.paper:C.ink),`Move ${ch} sound into its matching box`);
+ }).join('');
+ return decorated('#f9f1e5',title('Find the sounds')+
+  c(240,407,115,C.sun)+face(240,410,1.7)+t(240,505,symbols[s.word%words.length],25)+
+  [0,1,2].map(i=>r(64+i*121,522,108,99,s.placed[i]?'#c8e5d9':'#fcf9f0',16,`stroke="${s.placed[i]?C.teal:'#cccbc2'}" stroke-width="3"`)).join('')+
+  pieces+
+  (finished?t(240,690,'You found the sounds!',22,C.teal):t(240,680,'Drag the sounds to their boxes',18,C.muted))+
+  pill(90,735,300,'Another word','word'));
 }
 function pawn(s){
  const skin=['#edbe88','#d5a075','#ab7959','#85594c'][s.face%4];
@@ -248,30 +256,86 @@ function pawn(s){
   (s.head%3?path('M145 324 Q162 231 240 236 Q322 232 335 324',C.ink):'')+
   pill(23,739,138,'Face','face')+pill(170,739,138,'Clothes','body')+pill(318,739,138,'Eyes','eyes'));
 }
+const ingredientArt=(id,x,y,size=1)=>{
+ const art=[
+  c(0,0,18,C.leaf)+c(-17,9,13,C.teal)+c(16,12,13,C.teal),
+  path('M-13 -27 Q29 -16 12 33 Q-8 60 -22 18 Z','#ea8d5c')+path('M-9 -25 Q-8 -51 9 -47 Q23 -42 8 -25 Z',C.leaf),
+  c(0,5,28,C.coral)+path('M-14 -17 L0 -36 L14 -17 L0 -23 Z',C.leaf),
+  r(-20,-27,40,58,C.sun,9)+r(-12,-40,24,16,C.paper,5)+c(0,7,4,C.ink)
+ ][id%4];
+ return `<g transform="translate(${x} ${y}) scale(${size})">${art}</g>`;
+};
 function cooking(s){
- const meal=s.ingredients.slice(-12).map((id,i)=>{
-  const angle=i*2.399,radius=28+(i%3)*25,x=238+Math.cos(angle)*radius,y=458+Math.sin(angle)*radius;
-  return c(x,y,22,colors[(id+i)%6])+c(x-6,y-7,5,'rgba(255,255,255,.52)');
+ const needs=[0,1,2,3];
+ const meal=s.ingredients.slice(-11).map((id,i)=>{
+  const angle=i*2.4,rad=24+(i%3)*21;
+  return ingredientArt(id,251+Math.cos(angle)*rad,465+Math.sin(angle)*rad,.44);
  }).join('');
- const ingredients=['Peas','Carrot','Tomato','Spice'];
- return decorated('#f7e6d5',title('Make a little something')+
-  r(25,174,430,154,'#de8f6f',21)+[0,1,2].map(i=>r(51+i*131,198,110,107,'#f8d4ac',11)).join('')+
-  r(48,358,384,292,'#b5c8c3',24)+
-  c(239,475,152,C.ink)+c(239,475,128,'#819d9c')+c(239,475,106,s.heat?'#f6bb67':'#f9dfb6')+meal+
-  action('stir',331,345,105,184,l(397,353,366,511,'#6e5b4e',13)+c(360,526,25,C.ink),'Stir the pot')+
-  ingredients.map((name,i)=>action(`ingredient:${i}`,23+i*111,666,103,112,
-  r(23+i*111,666,102,105,C.paper,17)+c(74+i*111,707,26,colors[i])+t(74+i*111,748,name,14),`Add ${name.toLowerCase()}`)).join(''));
+ if(s.mode%2===0){
+  // Guests and their food requests are the first activity, as in Pok Pok's
+  // documented Cooking entry flow. All illustrations and rules are original.
+  const selected=s.guest%3,skin=['#eac08d','#ad795a','#805742'];
+  const guests=[0,1,2].map(i=>{
+   const x=93+i*148,y=361+((i%2)*32),active=selected===i;
+   return action(`guest:${i}`,x-57,y-74,114,154,
+    r(x-41,y+25,82,96,[C.teal,C.blue,C.coral][i],31)+
+    c(x,y-10,53,skin[i])+c(x-18,y-10,4,C.ink)+c(x+18,y-10,4,C.ink)+
+    path(`M${x-15} ${y+11} Q${x} ${y+26} ${x+15} ${y+11}`,'none',`stroke="${C.ink}" stroke-width="3.5" stroke-linecap="round"`)+
+    (active?c(x,y-10,58,'none',`stroke="${C.sun}" stroke-width="5"`):''),`Choose dinner guest ${i+1}`);
+  }).join('');
+  return decorated('#f9e9d8',
+   r(36,144,408,167,'#e6b8a2',23)+r(61,166,152,116,'#b1d9cf',14)+
+   path('M136 168 V281 M61 224 H213','none',`stroke="${C.paper}" stroke-width="8"`)+
+   [0,1,2].map(i=>r(254+i*55,186,40,77,['#f5d77b','#9ec9b6','#f9c2a5'][i],12)).join('')+
+   title('Who is hungry?')+guests+
+   `<ellipse cx="240" cy="650" rx="231" ry="139" fill="#b27d5e"/>`+
+   `<ellipse cx="240" cy="632" rx="216" ry="125" fill="#e7b990"/>`+
+   c(240,621,100,C.paper)+c(240,621,73,'#f4e6c8')+
+   s.ingredients.slice(-6).map((id,i)=>ingredientArt(id,207+i*23,605+i%2*29,.48)).join('')+
+   (s.rejected?t(240,727,'Perhaps cook something first?',20,'#8e4739'):s.served?t(240,727,'A happy guest had a meal!',20,C.teal):'')+
+   action('guest:'+selected,277,198,136,100,r(277,198,136,98,C.paper,32)+ingredientArt(needs[s.craving%4],349,247,.7),'See what this guest would like')+
+   pill(24,754,202,'Kitchen','scene',C.paper)+pill(244,754,212,'Serve plate','serve',C.sun));
+ }
+ // A compact kitchen in portrait: sink, cooker, cupboard and ingredients all
+ // remain on the screen together; the pot no longer monopolizes the viewport.
+ return decorated('#f7e6d5',title('Experiment in the kitchen')+
+  r(20,160,440,138,'#de8f6f',20)+
+  [0,1,2].map(i=>action(`cupboard:${i}`,34+i*140,174,130,111,
+   r(34+i*140,174,130,108,s.cupboards[i]?'#f5dba5':'#eab194',13)+
+   (s.cupboards[i]?r(54+i*140,188,91,72,'#8e6655',10):r(70+i*140,200,55,61,'#f8d4ac',8))+
+   c(133+i*140,229,7,C.ink),`Open kitchen cupboard ${i+1}`)).join('')+
+  r(29,322,422,306,'#b5c8c3',26)+
+  action('water',40,346,104,162,r(38,344,123,134,C.paper,15)+
+    c(91,412,50,s.water?C.blue:'#d7e8e7')+
+    path('M73 390 V363 H113 V389','none',`stroke="${C.ink}" stroke-width="7" stroke-linecap="round"`)+
+    t(96,492,'Sink',15),'Fill or empty water')+
+  c(297,458,121,C.ink)+c(297,458,99,'#7d999a')+c(297,458,81,s.heat?'#f6bb67':'#f9dfb6')+
+  s.ingredients.slice(-9).map((id,i)=>{const a=i*2.5,rad=25+(i%3)*17;return ingredientArt(id,297+Math.cos(a)*rad,456+Math.sin(a)*rad,.5);}).join('')+
+  action('stir',348,337,101,184,l(415,362,372,500,'#775f50',12)+c(365,518,21,C.ink),'Stir the pot')+
+  action('heat',213,552,173,61,r(213,552,173,60,s.heat?C.coral:C.paper,21)+t(299,582,s.heat?'Heat on':'Heat off',18,s.heat?C.paper:C.ink),'Turn stove heat on or off')+
+  [0,1,2,3].map(i=>action(`ingredient:${i}`,17+i*115,648,105,89,
+   r(17+i*115,648,105,90,C.paper,18)+ingredientArt(i,69+i*115,682,.75)+t(70+i*115,720,['Peas','Carrot','Tomato','Spice'][i],13),`Add ${['peas','carrots','tomato','spice'][i]}`)).join('')+
+  pill(82,754,315,'Back to the table','scene',C.paper));
 }
 function factory(s){
- const dirs=['UP','RIGHT','DOWN','LEFT'];
- const tiles=s.commands.slice(0,6).map((d,i)=>action(`command:${i}`,37+(i%3)*140,268+Math.floor(i/3)*135,125,110,
-  r(37+(i%3)*140,268+Math.floor(i/3)*135,124,107,colors[d%6],18)+t(99+(i%3)*140,319+Math.floor(i/3)*135,['^','>','v','<'][d%4],44,C.paper),`Change direction ${i+1}`)).join('');
- const robotX=85+(s.robot%6)*61;
- return decorated('#e6eee9',title('A little robot journey')+
-  r(53,189,374,72,'#becbc9',24)+l(77,223,411,223,'#fdf9e7',6,'stroke-dasharray="14 14"')+
-  tiles+path(`M64 626 H415`,'none',`stroke="${C.ink}" stroke-width="7" stroke-dasharray="13 13"`)+
-  r(robotX-39,576,78,84,C.coral,17)+c(robotX-15,603,7,C.paper)+c(robotX+15,603,7,C.paper)+
-  pill(101,738,283,s.playing?'Pause the robot':'Run the robot','run'));
+ // Continuous factory loop with directable machines and crates, rather than a
+ // static programming worksheet. Observable flow; detailed parity is pending.
+ const belts=path('M45 243 H429 V519 H61 V243','none',`stroke="${C.ink}" stroke-width="30" stroke-linejoin="round"`)+
+  path('M45 243 H429 V519 H61 V243','none',`stroke="#8aaca6" stroke-width="18" stroke-linejoin="round" stroke-dasharray="20 15"`);
+ const workerX=88+(s.robot%6)*58;
+ const levers=s.commands.slice(0,4).map((v,i)=>action(`director:${i}`,48+(i%2)*201,314+Math.floor(i/2)*104,182,91,
+  r(48+(i%2)*201,314+Math.floor(i/2)*104,183,86,v%2?C.coral:C.sun,16)+
+  c(92+(i%2)*201,357+Math.floor(i/2)*104,23,C.paper)+
+  path(`M${81+(i%2)*201} ${357+Math.floor(i/2)*104} H${119+(i%2)*201}`,'none',`stroke="${C.ink}" stroke-width="7"`),`Change director button ${i+1}`)).join('');
+ const goods=Array.from({length:Math.min(5,s.goods)},(_,i)=>r(317+i%2*53,573+Math.floor(i/2)*39,43,36,colors[i],7)).join('');
+ return decorated('#e4efeb',title('A busy little factory')+
+  belts+levers+
+  r(workerX-30,199,60,71,C.blue,15)+c(workerX-12,229,6,C.paper)+c(workerX+14,229,6,C.paper)+
+  r(297,548,154,149,'#f3d89a',17)+t(373,559,'MARKET',14)+goods+
+  Array.from({length:Math.min(5,s.mess)},(_,i)=>c(58+i*32,584+i%2*36,12,'#817a75')).join('')+
+  action('crate',27,540,143,124,r(31,545,140,113,'#d29669',14)+l(64,571,132,639,'#9a694d',8)+l(137,574,63,639,'#9a694d',8), 'Unbox a delivery crate')+
+  pill(32,728,201,s.playing?'Pause loop':'Run loop','run')+
+  pill(249,728,199,'Clean up','clean'));
 }
 
 export function renderPortraitToy(id,s){
