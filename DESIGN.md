@@ -1,19 +1,26 @@
-# Poklike design system
+# Poklike playroom design
 
-## Mode and world
-Experience: a warm, hand-built table of geometric playthings. Original vector pieces inspired by the idea of manipulatives, not by copying any specific game's images. Quiet ivory canvas with deep ink, rust, sea green, cornflower and sunshine accents.
+## Mode
+Experience: interactive play, not task-oriented dashboards. Keep the warm ivory, terracotta, teal, sunny yellow, slate-blue, leaf green palette. Independently designed crisp toy geometry replaces rough placeholders; no imported commercial assets.
 
-## Tokens
-- Background `#f9f6ef` / cards `#fffdf8` / ink `#273845` / muted `#536774`.
-- Palette: coral `#e76d56`, ochre `#eec95a`, teal `#49a99a`, blue `#75a9d1`, plum `#9f7bac`, leaf `#73a96e`.
-- Soft offset shadows only. Rounded stage with precise crisp vector toy geometry, no remote fonts, no backgrounds from external domains.
-- Native system UI body (offline-safe); heavy rounded headings from installed local stack. No essential information encoded in color alone.
+## Responsive game composition
+- Portrait <=1024px: full-height SVG `viewBox="0 0 480 840"` built per toy in `portrait-toys.js`. All core actions are in the play surface with large physical hit regions. Home and reset are the only floating chrome. **No zoom carousel, panning arrows or global tool tray** in the portrait scene.
+- Landscape phones: full-screen wide SVG scene with low-height tool strip where necessary and accessible exit/reset icons.
+- Desktop: framed 960x600 scene on an ivory surface, with accessible tools and keyboard interactions.
+- Prefer larger playable objects over showing more detail at an unusably small scale. The original intentionally uses minimum touch target sizes; adapt geometry instead of scaling a landscape screenshot down.
+- Preserve scene and input coordinates through `toPortrait` / `toModel` conversion when dragging or drawing. Never store device pixels as play state.
 
-## Experience grammar
-Toy tiles of varied sizes form a tabletop. Inside an activity all app controls are deliberately discreet: a persistent home button, a restart affordance, a one-line context cue, the main interactive surface and touch-first control clusters. A motion-reduction choice suppresses passive animation; interactive feedback remains.
+## Game feel
+- Controls respond to finger position, not only to a generic "Next" button.
+- Busy Board: independent switches, two continuous sliders, turning dials, multi-pointer input; smooth low-volume synthesized effects.
+- Musical Blobs: draggable objects, distinct notes and collision feedback.
+- Busy Book: paged associations, tappable discoveries, navigable scenes.
+- Town: movable figures/vehicle, several destinations; still a simplified original interpretation pending video observations.
+- Draw directly with a finger; keep strokes and brush choices local.
+- Other toy scenes share the same touch-first, uncluttered composition and are explicitly partial parity until original behavior is documented.
 
-## Responsiveness
-- Desktop: staggered multi-column collection and centered landscape stage.
-- Tablet: landscape-first stage, 3–4 columns in gallery.
-- Mobile web: immersive fixed viewport with edge-to-edge stage; an adaptive SVG camera expands the scene to full screen and supports panning / 'See all'. Controls float above the art, avoiding browser chrome and device safe areas.
-- Native iOS and Android: native-stack navigation (iOS swipe-back and Android system Back), full-screen native SVG scenes, native modal adult controls, minimum 48dp touch targets, safe-area-aware overlays, and bundled offline sounds.
+## Accessibility and stability
+- Game SVG actions have role, accessible label, and keyboard operability; exit/reset minimum 48 CSS px on touch screens.
+- Respect notches, dynamic viewport, on-device motion preference, and landscape rotation.
+- Save on interaction; on update cache all assets as one atomic bundle. No external fetches after install.
+- Physical-device acceptance requires Safari PWA, Android Chrome PWA, iPad portrait and landscape screenshots and real touch interaction. Browser emulation does not prove device equivalence.

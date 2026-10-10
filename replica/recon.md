@@ -34,3 +34,35 @@ The source application's proprietary artwork, characters, sound recordings, prop
 
 ## Size
 XL for verified feature parity across 25 independent creative toys. Screen count 28, flow count 5, remote DB count 0. High-risk parts: 25 independent interaction systems, cross-platform touch targets, atomic precaching and cache-update rollback.
+
+## Gameplay-focused recon update (2026-10-10)
+
+### User-provided videos: source status
+
+| ID | Reference | Status / verified observations |
+| --- | --- | --- |
+| V01 | https://www.youtube.com/watch?v=_eU28IGSi0M | **Not inspected**: YouTube fetch is blocked in this execution environment; no frames, audio or transcript available. |
+| V02 | https://www.youtube.com/watch?v=eCYRBnBDSrU&t=19s | **Not inspected**: YouTube fetch is blocked; the 19s timestamp is provided by user, not a verified observation. |
+
+### Verified public source observations, not from V01/V02
+
+| ID | Source | Observable gameplay patterns |
+| --- | --- | --- |
+| P01 | https://9to5mac.com/2021/05/20/hands-on-with-pok-pok-playroom-kids-app/ | Toys generally show a single small home control and few textual menus. Town: school, farm, library, vehicles and people. Busy Board: levers, switches, knobs, wheels, gears and multi-touch. Busy Book: browsable illustrations and tappable objects, swipe and shortcut navigation. |
+| P02 | https://developer.apple.com/news/?id=5bcex7xf | Musical Blobs: abstract shapes interact, blue represents C pitch and circles are simple sine-wave tones. Sound design prioritizes quiet, repeatable feedback. |
+| P03 | https://playpokpok.com/blog/busy-board-expansion-is-here-662e737e59d7/ | Busy Board includes one- and two-handed mechanisms; child-triggered sound, magnetism/electricity/gravity concepts. |
+| P04 | https://playpokpok.com/blog/new-toy-dress-up/ | Dress-Up cycles body types and features, scroll/tap clothing and hair categories, and allows free experimentation. |
+| P05 | https://www.commonsensemedia.org/app-reviews/pok-pok-playroom | Direct tap/swipe/drag, creative drawing, collision music, interactive town and gadgets. |
+
+### Key mismatch that triggered this refactor
+
+The previous prototype scaled a 960x600 scene into small phone widths or cropped it and added navigation arrows, while hiding play objects and leaving most interactions in a bottom toolbar. On the 390x844 capture, the Cooking bowl occupied nearly the entire viewport while ingredients were off-screen. This was a reproduced UI defect, not an evidence-based recreation of Pok Pok.
+
+### Mobile interaction spec
+
+- **F06 Phone portrait:** gallery -> any toy -> 480x840 purpose-composed activity -> direct touch action -> persisted result. Check all 25 with real tap targets and no hidden scene objects.
+- **F07 Rotation:** landscape toy -> rotate portrait -> portrait game scene, same underlying play state -> rotate back. No resets, lost creations or unreachable controls.
+- **F08 Multi-pointer:** in Busy Board two fingers can control separate mechanisms without one pointer stealing the other.
+- **F09 Musical collision:** drag a shape onto another -> state change and gentle musical feedback.
+
+Screens S02-S26 now have explicit mobile portrait compositions, but video-verified per-toy depth remains **partial**, not equivalent. Source video frames must be supplied before a truthful frame-by-frame diff is possible.

@@ -1,29 +1,29 @@
 feature,area,priority,original,clone,notes
-Code Factory,code-factory,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Cooking,cooking,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Phonics,phonics,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Pawn Maker,pawn-maker,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Geometry,geometry,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Space,space,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Number Journey,number-journey,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Shapes,shapes,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Dress-Up,dress-up,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Dinosaurs,dinosaurs,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-World Puzzle,world-puzzle,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Radio,radio,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Islands,islands,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Connect The Dots,connect-the-dots,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Marble Machine,marble-machine,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Shops,shops,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Sequencer,sequencer,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Forest,forest,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-House,house,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Silly Blocks,silly-blocks,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Town,town,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Drawing,drawing,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Busy Board,busy-board,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Musical Blobs,musical-blobs,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Busy Book,busy-book,must,public catalogue theme; exact mechanics to verify,partial,Implemented; 57 unit tests and full Chromium online/offline smoke suite passed; exact original-scene parity requires recordings
-Offline-first full precache,shell,must,offline supported,partial,Implemented; Chromium browser checks passed; iOS/Android physical-device check pending
-Adult-gated local settings,shell,must,adult area publicly documented,partial,Implemented; Chromium browser checks passed; iOS/Android physical-device check pending
-Save/resume/reset,shell,must,original storage behaviour unverified,partial,Implemented; Chromium browser checks passed; iOS/Android physical-device check pending
+Code Factory,code-factory,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Cooking,cooking,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Phonics,phonics,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Pawn Maker,pawn-maker,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Geometry,geometry,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Space,space,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Number Journey,number-journey,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Shapes,shapes,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Dress-Up,dress-up,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Dinosaurs,dinosaurs,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+World Puzzle,world-puzzle,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Radio,radio,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Islands,islands,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Connect The Dots,connect-the-dots,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Marble Machine,marble-machine,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Shops,shops,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Sequencer,sequencer,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Forest,forest,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+House,house,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Silly Blocks,silly-blocks,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Town,town,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Drawing,drawing,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Busy Board,busy-board,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Musical Blobs,musical-blobs,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Busy Book,busy-book,must,public catalogue theme; exact mechanics to verify,partial,Implemented and unit tested; pending CI/browser verification and original-scene recording comparison
+Offline-first full precache,shell,must,offline supported,partial,Implemented; browser/physical-device verification pending
+Adult-gated local settings,shell,must,adult area publicly documented,partial,Implemented; browser/physical-device verification pending
+Save/resume/reset,shell,must,original storage behaviour unverified,partial,Implemented; browser/physical-device verification pending

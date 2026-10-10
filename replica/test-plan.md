@@ -21,3 +21,15 @@
 
 ## Manual signoff still required
 Install/Add to Home Screen on a physical iPhone/iPad and Android tablet; test physical pinch/drag gestures, silent mode and browser storage eviction; compare toys against user recordings for depth/scene fidelity.
+
+## Responsive/PWA regression plan (2026-10-10)
+
+- F06-H1: For each of 25 activities at 390x844, stage fills >=98% viewport height, uses portrait viewBox 480x840, provides an in-bounds tappable/draggable target, and has no global toolbar over the scene.
+- F06-H2: At 320x568 and 412x915, content fits without horizontal overflow or hidden persistent navigation buttons.
+- F06-H3: Cooking ingredient tap changes the stored recipe without separate bottom controls.
+- F07-H1: Change viewport from phone portrait to landscape while inside a toy, assert wide viewBox and retained state; rotate back, verify portrait restored.
+- F08-H1: Busy Board dials respond and two sliders can be moved independently with two pointer IDs.
+- F09-H1: Musical Blobs update collision count when objects overlap; drawing pointer strokes persist after reload.
+- F03-H1: With offline network emulation after confirmed asset cache, reload gallery and open all 25 activities. Cache should contain portrait-toys.js.
+- Manual M01/M02: Real Safari Add to Home Screen on iPhone; Android Chrome install; verify safe areas, 2-finger sliders, landscape, screen reader, storage under OS memory pressure.
+- Manual M03: Upload V01/V02 video files; timestamp and describe each toy scene before calling replica parity verified.
