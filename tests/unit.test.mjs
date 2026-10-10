@@ -118,3 +118,13 @@ test('Phonics can complete each of its sound slots by dragging a grapheme',()=>{
  assert.deepEqual(s.placed,[true,true,true]);
  interact('phonics',s,'word');assert.deepEqual(s.placed,[false,false,false]);
 });
+
+import {renderWideToy,richWideIds} from '../wide-toys.js';
+for(const id of richWideIds){
+ test(`${id} has coordinated portrait and landscape gameplay`,()=>{
+  const landscape=renderWideToy(id,initialState(id));
+  assert.ok(landscape.art.length>1400);
+  assert.match(landscape.art,/data-act=|data-drag=/);
+  assert.ok(renderPortraitToy(id,initialState(id)).art.length>1400);
+ });
+}
