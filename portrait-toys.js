@@ -8,7 +8,8 @@ export const toModel=({x,y})=>({x:x*2,y:y/1.4});
 const n=v=>Math.round(v*10)/10;
 const safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const r=(x,y,w,h,fill,rad=14,extras='')=>`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${rad}" fill="${fill}" ${extras}/>`;
-const c=(x,y,rad,fill,extras='')=>`<circle cx="${n(x)}" cy="${n(y)}" r="${rad}" fill="${fill}" ${extras}/>`;
+let circleWidthRatio=1;
+const c=(x,y,rad,fill,extras='')=>`<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rad*circleWidthRatio)}" ry="${rad}" fill="${fill}" ${extras}/>`;
 const l=(x1,y1,x2,y2,col=C.ink,sw=6,extras='')=>`<path d="M${n(x1)} ${n(y1)} L${n(x2)} ${n(y2)}" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" fill="none" ${extras}/>`;
 const t=(x,y,str,size=23,col=C.ink,extra='')=>`<text x="${n(x)}" y="${n(y)}" fill="${col}" font-family="ui-rounded,system-ui,sans-serif" font-size="${size}" font-weight="800" text-anchor="middle" dominant-baseline="middle" ${extra}>${safe(str)}</text>`;
 const path=(d,col,extra='')=>`<path d="${d}" fill="${col}" ${extra}/>`;
@@ -277,9 +278,13 @@ function cooking(s){
   const selected=s.guest%3,skin=['#eac08d','#ad795a','#805742'];
   const guests=[0,1,2].map(i=>{
    const x=93+i*148,y=361+((i%2)*32),active=selected===i;
-   return action(`guest:${i}`,x-57,y-74,114,154,
+   const hair=i===0?path(`M${x-53} ${y-22} Q${x-59} ${y-97} ${x} ${y-81} Q${x+59} ${y-93} ${x+53} ${y-24} Q${x+10} ${y-75} ${x-53} ${y-22} Z`,'#634f49'):
+     i===1?[c(x-30,y-55,24,'#503d37'),c(x,y-67,28,'#503d37'),c(x+29,y-52,22,'#503d37')].join(''):
+     path(`M${x-55} ${y-21} Q${x-63} ${y-113} ${x+3} ${y-88} Q${x+64} ${y-93} ${x+57} ${y-17} L${x+45} ${y+60} L${x+36} ${y-48} Q${x} ${y-73} ${x-35} ${y-39} Z`,'#493b3b');
+   return action(`guest:${i}`,x-57,y-96,114,176,
     r(x-41,y+25,82,96,[C.teal,C.blue,C.coral][i],31)+
-    c(x,y-10,53,skin[i])+c(x-18,y-10,4,C.ink)+c(x+18,y-10,4,C.ink)+
+    r(x-15,y+49,30,9,colors[(i+2)%6],5)+
+    c(x,y-10,53,skin[i])+hair+c(x-18,y-10,4,C.ink)+c(x+18,y-10,4,C.ink)+
     path(`M${x-15} ${y+11} Q${x} ${y+26} ${x+15} ${y+11}`,'none',`stroke="${C.ink}" stroke-width="3.5" stroke-linecap="round"`)+
     (active?c(x,y-10,58,'none',`stroke="${C.sun}" stroke-width="5"`):''),`Choose dinner guest ${i+1}`);
   }).join('');
@@ -338,9 +343,11 @@ function factory(s){
   pill(249,728,199,'Clean up','clean'));
 }
 
-export function renderPortraitToy(id,s){
+export function renderPortraitToy(id,s,viewportAspect=PORTRAIT.width/PORTRAIT.height){
+ circleWidthRatio=Math.max(.7,Math.min(1.5,(PORTRAIT.width/PORTRAIT.height)/(Number(viewportAspect)||PORTRAIT.width/PORTRAIT.height)));
  const cases={drawing, 'busy-board':board,'musical-blobs':blobs,'busy-book':book,town,house,forest,islands,shapes,'dress-up':dress,'silly-blocks':blocks,'marble-machine':marble,sequencer:sequence,radio,'world-puzzle':puzzle,dinosaurs:dinos,'connect-the-dots':dots,shops,geometry,space,'number-journey':numbers,phonics,'pawn-maker':pawn,cooking,'code-factory':factory};
  const renderer=cases[id];
  if(!renderer)throw new Error('No portrait scene for '+id);
- return {art:renderer(s),viewBox:'0 0 480 840'};
+ const art=renderer(s);circleWidthRatio=1;
+ return {art,viewBox:'0 0 480 840'};
 }
