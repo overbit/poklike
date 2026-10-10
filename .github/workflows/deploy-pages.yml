@@ -1,0 +1,49 @@
+name: Deploy Poklike to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  verify-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify toy mechanics
+        run: npm test
+      - name: Verify offline playroom at /poklike/
+        env:
+          POKLIKE_BASE_PATH: /poklike/
+        run: |
+          BROWSER=$(command -v chromium || command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser)
+          test -n "$BROWSER"
+          CHROMIUM="$BROWSER" npm run test:browser
+      - name: Set up GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Package static offline app
+        run: |
+          mkdir -p _site/icons
+          cp index.html styles.css app.js toys.js sw.js manifest.webmanifest _site/
+          cp icons/poklike.svg icons/poklike-180.png icons/poklike-192.png icons/poklike-512.png _site/icons/
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Publish GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

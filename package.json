@@ -1,0 +1,9 @@
+{
+  "name":"poklike",
+  "version":"0.1.0",
+  "private":true,
+  "type":"module",
+  "description":"25 original, offline-first interactive toys",
+  "scripts":{"serve":"python3 -m http.server 8000","test":"node --test tests/unit.test.mjs","test:browser":"node tests/browser.mjs"},
+  "engines":{"node":">=20"}
+}
