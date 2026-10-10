@@ -348,7 +348,7 @@ function radio(s){
 }
 function puzzle(s){
  const tiles=s.tiles.slice(0,6).map((obj,i)=>{
- const at=toPortrait(obj);return drag(`tile:${i}`,Math.min(409,Math.max(63,at.x)),Math.max(417,Math.min(705,at.y+92)),r(-53,-50,106,100,colors[i],19)+c(0,0,19,C.paper),'Move puzzle piece');
+ const at=toPortrait(obj);return drag(`tile:${i}`,Math.min(409,Math.max(63,at.x)),Math.max(215,Math.min(735,at.y+92)),r(-53,-50,106,100,colors[i],19)+c(0,0,19,C.paper),'Move puzzle piece');
  }).join('');
  return decorated('#e8ecdf',title('Find a place for every piece')+
  [0,1,2,3,4,5].map(i=>r(70+(i%3)*116.5,262+Math.floor(i/3)*227,105,91,C.paper,15,`stroke="#bfcbc7" stroke-width="3" stroke-dasharray="8 7"`)).join('')+
