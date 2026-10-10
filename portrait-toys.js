@@ -5,6 +5,13 @@ import {C,colors} from './toys.js';
 export const PORTRAIT={width:480,height:840};
 export const toPortrait=({x,y})=>({x:x/2,y:y*1.4});
 export const toModel=({x,y})=>({x:x*2,y:y/1.4});
+// Local stage offsets make the initial wide-model objects visible in phone scenes.
+// Reverse these offsets before persisting a drag, or pieces jump on release.
+export const PORTRAIT_DRAG_LIFT=Object.freeze({
+ house:85,islands:145,'silly-blocks':124,'world-puzzle':92,dinosaurs:105,geometry:104,space:135
+});
+export const portraitDragToModel=(id,point)=>toModel({x:point.x,y:point.y-(PORTRAIT_DRAG_LIFT[id]||0)});
+
 const n=v=>Math.round(v*10)/10;
 const safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const r=(x,y,w,h,fill,rad=14,extras='')=>`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${rad}" fill="${fill}" ${extras}/>`;
@@ -320,7 +327,7 @@ function puzzle(s){
  const at=toPortrait(obj);return drag(`tile:${i}`,Math.min(409,Math.max(63,at.x)),Math.max(417,Math.min(705,at.y+92)),r(-53,-50,106,100,colors[i],19)+c(0,0,19,C.paper),'Move puzzle piece');
  }).join('');
  return decorated('#e8ecdf',title('Find a place for every piece')+
- [0,1,2,3,4,5].map(i=>r(33+(i%3)*141,183+Math.floor(i/3)*113,116,94,C.paper,15,`stroke="#bfcbc7" stroke-width="3" stroke-dasharray="8 7"`)).join('')+
+ [0,1,2,3,4,5].map(i=>r(70+(i%3)*116.5,262+Math.floor(i/3)*227,105,91,C.paper,15,`stroke="#bfcbc7" stroke-width="3" stroke-dasharray="8 7"`)).join('')+
  tiles+pill(145,741,190,'Mix the pieces','shuffle'));
 }
 function dinos(s){
