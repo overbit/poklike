@@ -1,5 +1,5 @@
 import {toys,ids,toyById,initialState,renderToy,interact,moveDrag,tickToy,C} from './toys.js';
-import {renderPortraitToy,toModel,toPortrait} from './portrait-toys.js';
+import {renderPortraitToy,toModel,toPortrait,portraitDragToModel,PORTRAIT_DRAG_LIFT} from './portrait-toys.js';
 import {renderWideToy,richWideIds} from './wide-toys.js';
 
 const KEY='poklike-state-v1', PREF='poklike-prefs-v1';
@@ -196,7 +196,8 @@ function pointerMove(ev){
    d.path.setAttribute('d',d.line.points.map((p,i)=>{const pos=d.portrait?toPortrait({x:p[0],y:p[1]}):{x:p[0],y:p[1]};return `${i?'L':'M'}${pos.x} ${pos.y}`;}).join(' '));
   }
  }else if(d.kind==='move'){
-  const range=d.portrait?{left:48,right:432,top:145,bottom:725}:{left:60,right:885,top:85,bottom:520};
+  const lift=d.portrait?(PORTRAIT_DRAG_LIFT[currentToy]||0):0;
+  const range=d.portrait?{left:48,right:432,top:Math.max(145,119+lift),bottom:725}:{left:60,right:885,top:85,bottom:520};
   d.x=Math.max(range.left,Math.min(range.right,at.x+d.offset.x));
   d.y=Math.max(range.top,Math.min(range.bottom,at.y+d.offset.y));
   d.element.setAttribute('transform',`translate(${d.x} ${d.y})`);
@@ -211,7 +212,7 @@ function pointerUp(ev){
   if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.4)handleAction(dx<0?'next':'prev');
  }
  if(d.kind==='move'){
-  const model=d.portrait?toModel({x:d.x,y:d.y}):{x:d.x,y:d.y};
+  const model=d.portrait?portraitDragToModel(currentToy,{x:d.x,y:d.y}):{x:d.x,y:d.y};
   const state=loadState(currentToy),before=state.collisions||0;
   moveDrag(currentToy,state,d.key,model.x,model.y);
   if(preferences.sound){
@@ -328,7 +329,7 @@ document.addEventListener('keydown',ev=>{
   ev.preventDefault();
   const [x,y]=((drag.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]([\d.]+)\)/)||[]).slice(1).map(Number);
   const dx=ev.key==='ArrowRight'?20:ev.key==='ArrowLeft'?-20:0,dy=ev.key==='ArrowDown'?20:ev.key==='ArrowUp'?-20:0;
-  if(Number.isFinite(x)&&Number.isFinite(y)){const p=isPortraitPlay()?toModel({x:x+dx,y:y+dy}):{x:x+dx,y:y+dy};if(moveDrag(currentToy,loadState(currentToy),drag.dataset.drag,p.x,p.y)){save();updateStage();}}
+  if(Number.isFinite(x)&&Number.isFinite(y)){const p=isPortraitPlay()?portraitDragToModel(currentToy,{x:x+dx,y:y+dy}):{x:x+dx,y:y+dy};if(moveDrag(currentToy,loadState(currentToy),drag.dataset.drag,p.x,p.y)){save();updateStage();}}
  }
  const control=ev.target instanceof Element?ev.target.closest('svg [data-act]'):null;
  if(control&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();handleAction(control.dataset.act);}
