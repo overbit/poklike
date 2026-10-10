@@ -38,7 +38,8 @@ test('sequencer advances only when playing and produces notes',()=>{
 test('marble machine and factory can pause without moving',()=>{
  const a=initialState('marble-machine'),b=initialState('code-factory');
  interact('marble-machine',a,'run');assert.equal(tickToy('marble-machine',a),null);
- interact('code-factory',b,'run');assert.ok(Array.isArray(tickToy('code-factory',b)));
+ assert.ok(Array.isArray(tickToy('code-factory',b)));
+ interact('code-factory',b,'run');assert.equal(tickToy('code-factory',b),null);
 });
 test('world puzzle snaps close enough tiles into intended slot',()=>{
  const s=initialState('world-puzzle');moveDrag('world-puzzle',s,'tile:0',245,149);
@@ -91,3 +92,29 @@ for(const [id,action] of characteristicActions){
   assert.ok(renderPortraitToy(id,state).art.length>1000);
  });
 }
+
+
+test('Cooking begins at a guest table and exposes a second kitchen scene',()=>{
+ const s=initialState('cooking');assert.equal(s.mode,0);
+ assert.match(renderPortraitToy('cooking',s).art,/Who is hungry/);
+ interact('cooking',s,'guest:1');assert.equal(s.guest,1);
+ interact('cooking',s,'serve');assert.equal(s.rejected,1);
+ interact('cooking',s,'scene');assert.equal(s.mode,1);
+ assert.match(renderPortraitToy('cooking',s).art,/Kitchen|kitchen/);
+ interact('cooking',s,'ingredient:0');interact('cooking',s,'water');
+ assert.equal(s.water,true);
+ interact('cooking',s,'scene');interact('cooking',s,'serve');
+ assert.equal(s.served,1);assert.equal(s.ingredients.length,0);
+});
+test('Code Factory starts in continuous operation and a crate creates goods and mess',()=>{
+ const s=initialState('code-factory');assert.equal(s.playing,true);
+ interact('code-factory',s,'crate');assert.equal(s.goods,1);assert.equal(s.mess,1);
+ interact('code-factory',s,'director:0');assert.equal(s.commands[0],2);
+ interact('code-factory',s,'clean');assert.equal(s.mess,0);
+});
+test('Phonics can complete each of its sound slots by dragging a grapheme',()=>{
+ const s=initialState('phonics');assert.deepEqual(s.placed,[false,false,false]);
+ for(let i=0;i<3;i++)moveDrag('phonics',s,`phoneme:${i}`,460,410);
+ assert.deepEqual(s.placed,[true,true,true]);
+ interact('phonics',s,'word');assert.deepEqual(s.placed,[false,false,false]);
+});

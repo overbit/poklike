@@ -48,8 +48,8 @@ async function run(){
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
- const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v4');return (await c.keys()).length})()`);
- verify(cached>=7,'complete offline bundle is precached');
+ const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v5');return (await c.keys()).length})()`);
+ verify(cached>=11,'all original and portrait assets are precached');
  await snapshot('collection-desktop');
  for(const toy of toys){
   await evaluate(`location.hash='#/toy/${toy.id}'`);
@@ -116,11 +116,15 @@ async function run(){
  }
  await evaluate(`location.hash='#/toy/cooking'`);
  await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'cooking portrait actions');
+ const guests=await evaluate(`(()=>{const before=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking;document.querySelector('[data-act="guest:1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));const after=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking;return after.guest===1})()`);
+ verify(guests,'Cooking starts with interactive dinner guests');
+ await evaluate(`document.querySelector('[data-act="scene"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
+ verify(await evaluate(`document.querySelector('[data-act="ingredient:1"]')!==null`),'Cooking kitchen has ingredients in the same viewport');
  const cooking=await evaluate(`(()=>{const before=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking.ingredients.length;document.querySelector('[data-act="ingredient:1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));const after=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking.ingredients.length;return after===before+1})()`);
  verify(cooking,'tap ingredient changes real cooking state');
  await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'landscapePrimary',angle:90}});
  await wait(350);
- verify(await evaluate(`document.querySelector('[data-stage]').getAttribute('viewBox')==='0 0 960 600'`),'landscape switches to a wide scene');
+ verify(await evaluate(`(()=>{const v=document.querySelector('[data-stage]').viewBox.baseVal;return v.width===960&&v.height<600})()`),'landscape switches to a non-distorted wide scene');
  await snapshot('toy-landscape');
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
  await wait(320);
