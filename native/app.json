@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Poklike",
+    "slug": "poklike-native",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.poklike.playroom",
+      "infoPlist": {
+        "UIRequiresFullScreen": false
+      }
+    },
+    "android": {
+      "package": "app.poklike.playroom",
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#f9f6ef"
+      }
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false,
+          "microphonePermission": false,
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ]
+    ],
+    "extra": {
+      "privacy": "Offline local storage only; no tracking"
+    }
+  }
+}
