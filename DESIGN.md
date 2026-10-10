@@ -24,3 +24,6 @@ Experience: interactive play, not task-oriented dashboards. Keep the warm ivory,
 - Respect notches, dynamic viewport, on-device motion preference, and landscape rotation.
 - Save on interaction; on update cache all assets as one atomic bundle. No external fetches after install.
 - Physical-device acceptance requires Safari PWA, Android Chrome PWA, iPad portrait and landscape screenshots and real touch interaction. Browser emulation does not prove device equivalence.
+
+## Visual QA notes
+The drawing activity begins with an empty canvas; only its gallery thumbnail uses a transient sample illustration. World Puzzle reserves a six-piece tray below a two-row target board and places Shuffle above both, avoiding touch occlusion. All artwork remains original SVG geometry, with no remote image requests.
