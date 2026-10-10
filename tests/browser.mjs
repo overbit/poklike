@@ -48,8 +48,8 @@ async function run(){
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
- const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v5');return (await c.keys()).length})()`);
- verify(cached>=11,'all original and portrait assets are precached');
+ const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v6');return (await c.keys()).length})()`);
+ verify(cached>=12,'all original and responsive assets are precached');
  await snapshot('collection-desktop');
  for(const toy of toys){
   await evaluate(`location.hash='#/toy/${toy.id}'`);
@@ -125,6 +125,8 @@ async function run(){
  await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'landscapePrimary',angle:90}});
  await wait(350);
  verify(await evaluate(`(()=>{const v=document.querySelector('[data-stage]').viewBox.baseVal;return v.width===960&&v.height<600})()`),'landscape switches to a non-distorted wide scene');
+ verify(await evaluate(`document.querySelector('[data-stage] [data-act="scene"]')!==null`),'landscape Cooking retains guest/kitchen interactions');
+ verify(await evaluate(`getComputedStyle(document.querySelector('.play-controls')).display==='none'`),'rich landscape toy does not cover the scene with generic tools');
  await snapshot('toy-landscape');
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
  await wait(320);
