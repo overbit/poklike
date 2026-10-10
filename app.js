@@ -137,6 +137,12 @@ function pointerDown(ev){
   dragging={kind:'move',key:movable.dataset.drag,element:movable,origin:at,offset:{x:x-at.x,y:y-at.y},x,y,moved:false,id:ev.pointerId};
   try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();return;
  }
+ // On phones the background is a natural camera pan surface.
+ // Keep object drags, tap actions and finger drawing independent.
+ if(currentToy!=='drawing'&&!camera.fit&&(camera.width<959||camera.height<599)&&!target?.closest('[data-act]')){
+  dragging={kind:'camera',id:ev.pointerId,startX:ev.clientX,startY:ev.clientY,x:camera.x||0,y:camera.y||0};
+  try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();return;
+ }
  if(currentToy==='drawing'&&!target?.closest('[data-act]')&&at.y<478&&at.y>35&&at.x>60&&at.x<900){
   const st=loadState('drawing');
   if(st.strokes.length>=150)st.strokes.shift();
@@ -149,6 +155,13 @@ function pointerDown(ev){
 function pointerMove(ev){
  if(!dragging||ev.pointerId!==dragging.id)return;
  const svg=ev.currentTarget,at=point(ev,svg);
+ if(dragging.kind==='camera'){
+  const x=dragging.x-(ev.clientX-dragging.startX)*camera.width/Math.max(1,svg.clientWidth);
+  const y=dragging.y-(ev.clientY-dragging.startY)*camera.height/Math.max(1,svg.clientHeight);
+  camera.x=Math.max(0,Math.min(960-camera.width,x));
+  camera.y=Math.max(0,Math.min(600-camera.height,y));
+  refreshCamera();ev.preventDefault();return;
+ }
  if(dragging.kind==='draw'){
   const line=dragging.line;if(line.points.length<1500&&at.x>=60&&at.x<=900&&at.y>=35&&at.y<=478){line.points.push([at.x,at.y]);dragging.moved=true;dragging.path.setAttribute('d',line.points.map((p,i)=>`${i?'L':'M'}${p[0]} ${p[1]}`).join(' '));}
  }else{
@@ -160,6 +173,7 @@ function pointerMove(ev){
 function pointerUp(ev){
  if(!dragging||ev.pointerId!==dragging.id)return;
  const d=dragging;dragging=null;
+ if(d.kind==='camera'){ev.preventDefault();return;}
  if(d.kind==='move'){moveDrag(currentToy,loadState(currentToy),d.key,d.x,d.y);if(preferences.sound)sound(245+((d.key.length*41)%340),.13);}
  else if(d.kind==='draw'&&d.line.points.length===1)d.line.points.push([d.line.points[0][0]+.5,d.line.points[0][1]+.5]);
  try{ev.currentTarget.releasePointerCapture(ev.pointerId);}catch{}
