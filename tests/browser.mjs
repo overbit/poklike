@@ -132,14 +132,14 @@ async function run(){
  await evaluate(`location.hash='#/toy/cooking'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'mobile toy');
  await snapshot('toy-mobile');
  verify(await evaluate(`document.documentElement.scrollWidth<=innerWidth+2`),'mobile toy has no horizontal overflow');
- verify(await evaluate(`document.querySelector('[data-stage]').getAttribute('viewBox')==='0 0 480 840'`),'portrait game uses a composed vertical scene');
+ verify(await evaluate(`(()=>{const svg=document.querySelector('[data-stage]'),box=svg.getBoundingClientRect(),view=svg.viewBox.baseVal;return svg.dataset.layout==='portrait'&&Math.abs(view.width/view.height-box.width/box.height)<.004})()`),'portrait game uses a composed vertical scene');
  verify(await evaluate(`document.querySelector('.stage-wrap').getBoundingClientRect().height>=innerHeight*.98`),'portrait play takes the full viewport');
  verify(await evaluate(`getComputedStyle(document.querySelector('.play-controls')).display==='none'`),'portrait play does not cover toys with a toolbar');
  for(const toy of toys){
   await evaluate(`location.hash='#/toy/${toy.id}'`);
   await until(`document.querySelector('[data-stage]')?.dataset.stage==='${toy.id}'`,'portrait '+toy.id);
-  const audit=await evaluate(`(()=>{const scene=document.querySelector('[data-stage]'),targets=[...scene.querySelectorAll('[data-act],[data-drag]')];return {view:scene.getAttribute('viewBox'),interactive:targets.length,inside:targets.some(el=>{const r=el.getBoundingClientRect();return r.width>=28&&r.height>=28&&r.x<innerWidth-20&&r.right>20&&r.y<innerHeight-50&&r.bottom>90})}})()`);
-  verify(audit.view==='0 0 480 840'&&audit.interactive>0&&audit.inside,`${toy.title} portrait scene is interactive without horizontal camera controls`);
+  const audit=await evaluate(`(()=>{const scene=document.querySelector('[data-stage]'),targets=[...scene.querySelectorAll('[data-act],[data-drag]')];const box=scene.getBoundingClientRect(),view=scene.viewBox.baseVal;return {ratioOK:Math.abs(view.width/view.height-box.width/box.height)<.004,interactive:targets.length,inside:targets.some(el=>{const r=el.getBoundingClientRect();return r.width>=28&&r.height>=28&&r.x<innerWidth-20&&r.right>20&&r.y<innerHeight-50&&r.bottom>90})}})()`);
+  verify(audit.ratioOK&&audit.interactive>0&&audit.inside,`${toy.title} portrait scene is interactive without horizontal camera controls`);
  }
  await evaluate(`location.hash='#/toy/cooking'`);
  await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'cooking portrait actions');
@@ -157,10 +157,10 @@ async function run(){
  await snapshot('toy-landscape');
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
  await wait(320);
- verify(await evaluate(`document.querySelector('[data-stage]').getAttribute('viewBox')==='0 0 480 840'`),'rotation returns to portrait without losing toy selection');
+ verify(await evaluate(`(()=>{const svg=document.querySelector('[data-stage]'),box=svg.getBoundingClientRect(),view=svg.viewBox.baseVal;return svg.dataset.layout==='portrait'&&Math.abs(view.width/view.height-box.width/box.height)<.004})()`),'rotation returns to portrait without losing toy selection');
  await evaluate(`location.hash='#/toy/busy-board'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='busy-board'`,'busy board portrait');
  const multiSlider=await evaluate(`(()=>{
-  const svg=document.querySelector('[data-stage]'),p=svg.createSVGPoint(),world=(x,y)=>{p.x=x;p.y=y;const q=p.matrixTransform(svg.getScreenCTM());return [q.x,q.y]};
+  const svg=document.querySelector('[data-stage]'),p=svg.createSVGPoint(),world=(x,y)=>{p.x=x+Number(svg.dataset.offsetX||0);p.y=y+Number(svg.dataset.offsetY||0);const q=p.matrixTransform(svg.getScreenCTM());return [q.x,q.y]};
   const g0=svg.querySelector('[data-slider="0"]'),g1=svg.querySelector('[data-slider="1"]');
   const [ax,ay]=world(110,501),[bx,by]=world(110,601),[cx,cy]=world(394,501),[dx,dy]=world(350,601);
   const ptr=(el,type,id,x,y)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,clientX:x,clientY:y,bubbles:true,isPrimary:id===101}));
@@ -174,7 +174,7 @@ async function run(){
  for(const dims of [[320,568],[412,915]]){
   await send('Emulation.setDeviceMetricsOverride',{width:dims[0],height:dims[1],deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
   await wait(140);
-  verify(await evaluate(`(()=>{const stage=document.querySelector('[data-stage]'),rect=stage.getBoundingClientRect();return stage.getAttribute('viewBox')==='0 0 480 840'&&rect.height>=innerHeight*.98&&document.documentElement.scrollWidth<=innerWidth+2})()`),`${dims[0]}px portrait keeps complete stage and no overflow`);
+  verify(await evaluate(`(()=>{const stage=document.querySelector('[data-stage]'),rect=stage.getBoundingClientRect();return Math.abs(stage.viewBox.baseVal.width/stage.viewBox.baseVal.height-rect.width/rect.height)<.004&&rect.height>=innerHeight*.98&&document.documentElement.scrollWidth<=innerWidth+2})()`),`${dims[0]}px portrait keeps complete stage and no overflow`);
  }
 
 
