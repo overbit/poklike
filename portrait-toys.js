@@ -376,7 +376,7 @@ function puzzle(s){
   title('Make your own little picture')+
   pill(144,172,193,'Mix the pieces','shuffle','#f9f5e9')+
   r(33,243,414,365,'#d7e5dc',28)+slots+
-  finished?t(240,625,'All the pieces found a home!',19,C.teal):t(240,625,'Drag each piece to its shadow',19,C.muted)+
+  (finished?t(240,625,'All the pieces found a home!',19,C.teal):t(240,625,'Drag each piece to its shadow',19,C.muted))+
   tiles);
 }
 function dinos(s){
