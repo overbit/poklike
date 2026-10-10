@@ -87,15 +87,39 @@ function board(s){
   r(160,746,160,47,'#e9c49b',24)+t(240,769,powered?'LIGHT IS ON':'KEEP TRYING',16,C.ink));
 }
 function blobs(s){
- const positions=s.blobs.map(toPortrait);const mood=s.mode%4;
- const colorset=[C.sun,C.coral,C.teal,C.blue],orbits=positions.map((p,i)=>c(p.x,p.y,66+(s.turn%3)*4,'none',`stroke="${colorset[i%4]}" stroke-width="3" opacity=".2"`)).join('');
- const objects=positions.map((p,i)=>{
-  const col=colorset[(i+mood)%4],size=46+i*4;
-  const art=c(0,0,size,col)+c(-size*.3,-size*.4,size*.26,'rgba(255,255,255,.3)')+face(0,7,.9)+c(0,0,size+9,'transparent',`stroke="${col}" stroke-width="2" opacity=".5"`);
-  return drag(`blob:${i}`,p.x,p.y,art,`Move musical shape ${i+1}`);
+ const pts=s.blobs.map(toPortrait),palette=[C.blue,C.coral,C.sun,C.teal];
+ const harmony=(s.collisions||0)>0;
+ const shape=(i,color)=>{
+  if(i===0)return c(0,0,58,color)+c(-21,-25,14,'rgba(255,255,255,.4)');
+  if(i===1)return path('M-52 -19 Q-60 -68 -9 -69 Q38 -84 51 -32 Q86 19 33 58 Q-11 77 -48 41 Q-76 11 -52 -19 Z',color)+
+      c(-25,-25,12,'rgba(255,255,255,.37)');
+  if(i===2)return r(-54,-52,108,108,color,37)+r(-35,-40,26,22,'rgba(255,255,255,.3)',11);
+  return path('M3 -71 Q63 -30 63 18 Q61 66 6 69 Q-54 66 -59 22 Q-63 -26 3 -71 Z',color)+
+   c(-23,-9,15,'rgba(255,255,255,.32)');
+ };
+ const floaters=pts.map((p,i)=>{
+  const color=palette[(i+s.mode)%4],radius=73+((s.turn+i)%3)*3;
+  return c(p.x,p.y,radius,'none',`stroke="${color}" stroke-width="2.6" opacity="${harmony?'.22':'.11'}"`)+
+   (harmony?c(p.x,p.y,radius+13,'none',`stroke="${color}" stroke-width="2.5" stroke-dasharray="8 13" opacity=".21"`):'');
  }).join('');
- return decorated('#f9f8f3',title('Make a little melody')+stars(13)+orbits+objects+
-  pill(112,731,256,'Another sound','tone','#f1ece6'));
+ const pieces=pts.map((p,i)=>{
+  const color=palette[(i+s.mode)%4];
+  return drag(`blob:${i}`,p.x,p.y,
+   c(0,0,77,'transparent')+
+   `<g>${shape(i,color)}</g>`+
+   [0,1].map(j=>c(-12+j*22,3,3,C.ink)).join('')+
+   path('M-11 21 Q1 30 13 21','none',`stroke="${C.ink}" stroke-width="2.5" stroke-linecap="round"`),
+   `Move sound shape ${i+1} to combine notes`);
+ }).join('');
+ const ribbons=harmony?Array.from({length:3},(_,i)=>{
+  const y=661+i*20;return path(`M65 ${y} Q148 ${y-33} 240 ${y} T413 ${y}`,'none',`stroke="${palette[(s.collisions+i)%4]}" stroke-width="${i===0?5:3}" opacity=".4"`);
+ }).join(''):'';
+ return decorated('#f7f7f0',
+  title('Move the sounds together')+
+  [0,1,2,3,4].map(i=>l(36,206+i*96,444,206+i*96,'#e5e9df',2,'stroke-dasharray="2 19"')).join('')+
+  floaters+pieces+ribbons+
+  pill(99,747,284,'Change the melody','tone','#ecefe9')+
+  (harmony?t(240,709,'That sounds lovely together',18,C.muted):t(240,709,'Try letting two shapes meet',18,C.muted)));
 }
 function book(s){
  const page=((s.page%5)+5)%5;
