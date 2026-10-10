@@ -128,3 +128,10 @@ for(const id of richWideIds){
   assert.ok(renderPortraitToy(id,initialState(id)).art.length>1400);
  });
 }
+
+test('portrait artwork compensates circular shapes for differing device aspect ratios',()=>{
+ const iphone=renderPortraitToy('cooking',initialState('cooking'),390/844).art;
+ const tablet=renderPortraitToy('cooking',initialState('cooking'),768/1024).art;
+ assert.ok(iphone.includes('<ellipse')&&tablet.includes('<ellipse'));
+ assert.ok(!iphone.includes('undefined')&&!iphone.includes('NaN'));
+});
