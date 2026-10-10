@@ -468,7 +468,7 @@ export function interact(id,s,action){
 export function moveDrag(id,s,key,x,y){
  x=Math.max(60,Math.min(885,v(x)));y=Math.max(85,Math.min(520,v(y)));
  const [type,num]=key.split(':'),n=Number(num);
- if(id==='musical-blobs'&&type==='blob'&&s.blobs[n]){s.blobs[n]={x,y};if(s.blobs.some((p,i)=>i!==n&&Math.hypot(p.x-x,p.y-y)<118))s.collisions=(s.collisions||0)+1;return true;}
+ if(id==='musical-blobs'&&type==='blob'&&s.blobs[n]){s.blobs[n]={x,y};if(s.blobs.some((p,i)=>i!==n&&Math.hypot(p.x-x,p.y-y)<175))s.collisions=(s.collisions||0)+1;return true;}
  if(id==='phonics'&&type==='phoneme'&&Number.isInteger(n)&&n>=0&&n<3){if(y>=330)s.placed[n]=true;return true;}
  if(id==='town'){
   if(type==='vehicle'){s.vehicle={x,y};return true;}
