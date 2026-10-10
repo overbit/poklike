@@ -1,7 +1,9 @@
 name: Deploy Poklike to GitHub Pages
 on:
-  push:
+  workflow_run:
+    workflows: ["Verify Poklike"]
     branches: [main]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,26 +13,17 @@ concurrency:
   group: github-pages
   cancel-in-progress: false
 jobs:
-  verify-and-deploy:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Verify toy mechanics
-        run: npm test
-      - name: Verify offline playroom at /poklike/
-        env:
-          POKLIKE_BASE_PATH: /poklike/
-        run: |
-          BROWSER=$(command -v chromium || command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser)
-          test -n "$BROWSER"
-          CHROMIUM="$BROWSER" npm run test:browser
+          ref: main
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v5
         with:
