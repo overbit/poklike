@@ -1,0 +1,59 @@
+name: Build iOS simulator app
+on:
+  push:
+    branches: [main, 'feat/**']
+    paths:
+      - 'native/**'
+      - 'toys.js'
+      - '.github/workflows/native-build-ios.yml'
+  workflow_dispatch:
+concurrency:
+  group: poklike-native-ios-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  ios-simulator:
+    runs-on: macos-26
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Xcode
+        run: xcodebuild -version
+      - name: Install native dependencies
+        run: npm install --prefix native --no-audit --no-fund
+      - name: Generate native iOS project
+        working-directory: native
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: npx expo prebuild --platform ios --no-install
+      - name: Install CocoaPods
+        working-directory: native/ios
+        run: pod install
+      - name: Compile iPhone simulator app
+        working-directory: native/ios
+        env:
+          CI: '1'
+          NODE_ENV: production
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          workspace="$(find . -maxdepth 1 -name '*.xcworkspace' | head -n 1)"
+          test -n "$workspace"
+          scheme="$(basename "$workspace" .xcworkspace)"
+          xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Package iPhone simulator app
+        working-directory: native/ios
+        run: |
+          app="$(find build/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' | head -n 1)"
+          test -n "$app"
+          ditto -c -k --keepParent "$app" ../Poklike-iOS-simulator.zip
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: poklike-ios-simulator-app
+          path: native/Poklike-iOS-simulator.zip
+          retention-days: 14
