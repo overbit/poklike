@@ -24,4 +24,4 @@ See [`replica/recon.md`](replica/recon.md), [`replica/features.csv`](replica/fea
 
 ## Public distribution
 
-Deploy the repository's root as a static website over HTTPS (for example GitHub Pages configured to serve from `main` or `/docs`, or another HTTPS static host). No build step or server API is required. Changing app assets requires updating the cache `VERSION` in `sw.js`; an update precaches the full bundle before replacing the previous version.
+The deployment workflow publishes only static app assets from `main` to GitHub Pages at **https://overbit.github.io/poklike/** after the full unit and browser/offline suites pass. The GitHub Pages Actions source must be enabled on the repository; on a private repository, Pages availability depends on the owner's GitHub plan. The workflow tries to enable Pages automatically (`configure-pages` with `enablement: true`). No backend is needed. Changing app assets requires updating the cache `VERSION` in `sw.js`; an update precaches the full bundle before replacing the previous version.
