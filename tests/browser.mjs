@@ -10,6 +10,7 @@ import net from 'node:net';
 import {toys} from '../toys.js';
 
 const root=resolve(import.meta.dirname,'..');
+const basePath=process.env.POKLIKE_BASE_PATH==='/poklike/'?'/poklike/':'/';
 const artifacts=resolve(root,'test-artifacts');mkdirSync(artifacts,{recursive:true});
 let assertions=0,failures=0;
 const verify=(condition,message)=>{assert.ok(condition,message);assertions++;process.stdout.write('PASS '+message+'\n');};
@@ -23,7 +24,7 @@ async function snapshot(name){const shot=await send('Page.captureScreenshot',{fo
 function mouse(type,x,y,buttons=0){return send('Input.dispatchMouseEvent',{type,x,y,button:type==='mouseMoved'?'none':'left',buttons,clickCount:1});}
 async function start(){
  const port=await freePort(),remote=await freePort();tmp=mkdtempSync(join(tmpdir(),'poklike-browser-'));
- server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1','--directory',root],{stdio:'ignore'});
+ server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1','--directory',basePath==='/'?root:resolve(root,'..')],{stdio:'ignore'});
  chrome=spawn(process.env.CHROMIUM||'/usr/bin/chromium',['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-allow-origins=*',`--remote-debugging-port=${remote}`,`--user-data-dir=${tmp}`,'--window-size=1280,900','about:blank'],{stdio:'ignore'});
  await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');if(!r.ok)throw Error(r.status);return r.json();});
  const pages=await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');return r.json();});
@@ -37,12 +38,13 @@ async function start(){
   if(msg.method==='Network.responseReceived'&&msg.params.response?.status>=500)requests.push(msg.params.response.url+' '+msg.params.response.status);
  });
  await send('Page.enable');await send('Runtime.enable');await send('Network.enable');
- await send('Page.navigate',{url:'http://127.0.0.1:'+port+'/'});
+ await send('Page.navigate',{url:'http://127.0.0.1:'+port+basePath});
  await until(`document.querySelectorAll('[data-toy]').length===25`,'gallery visible');
 }
 async function run(){
  await start();
  verify(await evaluate(`document.querySelectorAll('[data-toy]').length===25`),'25 toys available from the collection');
+ verify(await evaluate(`location.pathname===${JSON.stringify(basePath)}`),'site opens at its expected base path');
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
@@ -80,11 +82,18 @@ async function run(){
  verify(await evaluate(`document.querySelector('#grown-up-check')!==null`),'adult gate protects settings');
  await evaluate(`document.querySelector('#grown-up-check input').value='0';document.querySelector('#grown-up-check').requestSubmit()`);
  verify(await evaluate(`!!document.querySelector('#gate-error').textContent`),'incorrect adult answer is rejected');
- await evaluate(`(()=>{const t=document.querySelector('#grown-up-check label').textContent;const m=t.match(/(\d+) \+ (\d+)/);document.querySelector('#grown-up-check input').value=Number(m[1])+Number(m[2]);document.querySelector('#grown-up-check').requestSubmit()})()`);
+ await evaluate(`(()=>{const t=document.querySelector('#grown-up-check label').textContent;const m=t.match(/([0-9]+) [+] ([0-9]+)/);document.querySelector('#grown-up-check input').value=Number(m[1])+Number(m[2]);document.querySelector('#grown-up-check').requestSubmit()})()`);
  await until(`document.querySelector('#setting-sound')!==null`,'settings unlock');
  verify(await evaluate(`document.querySelector('#setting-motion')!==null`),'adult settings are usable');
  await evaluate(`(()=>{const c=document.querySelector('#setting-sound');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));})()`);
  verify(await evaluate(`JSON.parse(localStorage.getItem('poklike-prefs-v1')).sound===false`),'parent sound preference persists');
+ verify(await evaluate(`(()=>{const b=document.querySelector('#clear-all');return b.disabled})()`),'bulk reset requires explicit confirmation');
+ await evaluate(`(()=>{const c=document.querySelector('#setting-motion');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+ verify(await evaluate(`document.body.dataset.reduced==='true'`),'reduced motion preference applies immediately');
+ await evaluate(`document.querySelector('#export-save').click()`);
+ verify(await evaluate(`document.querySelector('#settings-message').textContent.includes('Backup downloaded')`),'export offers a backup file');
+ await evaluate(`document.querySelector('#clear-confirm').value='CLEAR';document.querySelector('#clear-confirm').dispatchEvent(new Event('input',{bubbles:true}));`);
+ verify(await evaluate(`document.querySelector('#clear-all').disabled===false`),'bulk reset unlocks only after explicit confirmation');
  await evaluate(`document.querySelector('[data-close]').click()`);
  // Verify full offline reopen *after* initial installation.
  await evaluate(`location.hash='#/'`);
