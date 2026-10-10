@@ -145,6 +145,11 @@ function pointerDown(ev){
  const portrait=isPortraitPlay();
  const movable=target?.closest('[data-drag]');
  if(movable){
+  if(currentToy==='musical-blobs'&&preferences.sound){
+   const index=Number(movable.dataset.drag?.split(':')[1]||0);
+   const notes=[262,294,330,392,440];
+   sound(notes[(index+loadState('musical-blobs').mode)%notes.length],.19);
+  }
   const match=(movable.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]([-\d.]+)\)/);
   const x=Number(match?.[1]||0),y=Number(match?.[2]||0);
   gestures.set(ev.pointerId,{kind:'move',key:movable.dataset.drag,element:movable,offset:{x:x-at.x,y:y-at.y},x,y,portrait});
@@ -218,7 +223,8 @@ function pointerUp(ev){
   if(preferences.sound){
    sound(245+(d.key.length*41)%340,.12);
    if(currentToy==='musical-blobs'&&state.collisions>before){
-    sound(392,.31);setTimeout(()=>sound(523,.22),110);
+    const note=[262,294,330,392][Number(d.key.split(':')[1])%4]||330;
+    sound(note,.3);setTimeout(()=>sound(note*1.5,.22),95);
    }
   }
  }else if(d.kind==='draw'&&d.line.points.length===1){
