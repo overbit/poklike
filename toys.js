@@ -342,6 +342,11 @@ export function interact(id,s,action){
   if(a==='switch')s.switches[n]=!s.switches[n];
   if(a==='slide')s.sliders[n]=((s.sliders[n]||0)+.25)%1.01;
   if(a==='dial'&&Number.isInteger(n)&&n>=0&&n<s.dials.length)s.dials[n]=(s.dials[n]+1)%4;
+  // Meshed gears turn in opposite directions. Each is independently tappable.
+  if(a==='gear'&&Number.isInteger(n)&&n>=0&&n<s.dials.length){
+   s.dials[n]=(s.dials[n]+1)%4;
+   s.dials[1-n]=(s.dials[1-n]+3)%4;
+  }
   break;
  case 'musical-blobs':
   if(a==='tone')s.mode=(s.mode+1)%4;
@@ -350,7 +355,10 @@ export function interact(id,s,action){
  case 'busy-book':
   if(a==='prev')s.page=(s.page+bookPages.length-1)%bookPages.length;
   if(a==='next')s.page=(s.page+1)%bookPages.length;
-  if(a==='book')s.touched=[...(s.touched||[]).slice(-19),`${s.page}:${n}`];
+  if(a==='book'&&Number.isInteger(n)&&n>=0&&n<3){
+   const key=`${s.page}:${n}`,old=s.touched||[];
+   s.touched=old.includes(key)?old.filter(item=>item!==key):[...old.slice(-29),key];
+  }
   break;
  case 'town':
   if(a==='paint')s.color=(s.color+1)%6;
