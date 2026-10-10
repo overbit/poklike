@@ -158,11 +158,24 @@ async function run(){
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
  await wait(320);
  verify(await evaluate(`(()=>{const svg=document.querySelector('[data-stage]'),box=svg.getBoundingClientRect(),view=svg.viewBox.baseVal;return svg.dataset.layout==='portrait'&&Math.abs(view.width/view.height-box.width/box.height)<.004})()`),'rotation returns to portrait without losing toy selection');
- await evaluate(`location.hash='#/toy/busy-board'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='busy-board'`,'busy board portrait');
+ await evaluate(`location.hash='#/toy/busy-book'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='busy-book'`,'busy book portrait');
+ const book=await evaluate(`(()=>{
+  const svg=document.querySelector('[data-stage]'),key='0:0';
+  svg.querySelector('[data-act="book:0"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+  const touched=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].touched.includes(key);
+  const before=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].page;
+  svg.dispatchEvent(new PointerEvent('pointerdown',{pointerId:303,clientX:310,clientY:460,bubbles:true}));
+  svg.dispatchEvent(new PointerEvent('pointerup',{pointerId:303,clientX:90,clientY:460,bubbles:true}));
+  const after=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].page;
+  return {touched,moved:after===(before+1)%5};
+ })()`);
+ verify(book.touched&&book.moved,'Busy Book taps illustrated objects and swipes between pages');
+ await snapshot('busy-book-portrait');
+  await evaluate(`location.hash='#/toy/busy-board'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='busy-board'`,'busy board portrait');
  const multiSlider=await evaluate(`(()=>{
   const svg=document.querySelector('[data-stage]'),p=svg.createSVGPoint(),world=(x,y)=>{p.x=x+Number(svg.dataset.offsetX||0);p.y=y+Number(svg.dataset.offsetY||0);const q=p.matrixTransform(svg.getScreenCTM());return [q.x,q.y]};
   const g0=svg.querySelector('[data-slider="0"]'),g1=svg.querySelector('[data-slider="1"]');
-  const [ax,ay]=world(110,501),[bx,by]=world(110,601),[cx,cy]=world(394,501),[dx,dy]=world(350,601);
+  const [ax,ay]=world(110,595),[bx,by]=world(110,673),[cx,cy]=world(394,595),[dx,dy]=world(350,673);
   const ptr=(el,type,id,x,y)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,clientX:x,clientY:y,bubbles:true,isPrimary:id===101}));
   ptr(g0,'pointerdown',101,ax,ay);ptr(g1,'pointerdown',102,bx,by);
   ptr(svg,'pointermove',101,cx,cy);ptr(svg,'pointermove',102,dx,dy);
@@ -171,6 +184,14 @@ async function run(){
   return val[0]>.8&&val[1]>.7;
  })()`);
  verify(multiSlider,'Busy Board sliders respond to two independent fingers');
+ const linkedGear=await evaluate(`(()=>{
+  const before=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-board'].dials;
+  document.querySelector('[data-act="gear:0"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+  const after=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-board'].dials;
+  return after[0]===(before[0]+1)%4&&after[1]===(before[1]+3)%4;
+ })()`);
+ verify(linkedGear,'Busy Board gears spin together in opposite directions');
+ await snapshot('busy-board-portrait');
  for(const dims of [[320,568],[412,915]]){
   await send('Emulation.setDeviceMetricsOverride',{width:dims[0],height:dims[1],deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
   await wait(140);
