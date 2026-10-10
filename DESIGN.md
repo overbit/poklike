@@ -5,7 +5,7 @@ Experience: interactive play, not task-oriented dashboards. Keep the warm ivory,
 
 ## Responsive game composition
 - Portrait <=1024px: full-height SVG `viewBox="0 0 480 840"` built per toy in `portrait-toys.js`. All core actions are in the play surface with large physical hit regions. Home and reset are the only floating chrome. **No zoom carousel, panning arrows or global tool tray** in the portrait scene.
-- Landscape phones: full-screen wide SVG scene with low-height tool strip where necessary and accessible exit/reset icons.
+- Landscape phones: aspect-correct cropped or letterboxed wide SVG stage. Cooking, Code Factory and Phonics use independent wide compositions and direct actions; less-developed toys retain the original wide artwork and a low tool strip where necessary. Home and reset remain accessible.
 - Desktop: framed 960x600 scene on an ivory surface, with accessible tools and keyboard interactions.
 - Prefer larger playable objects over showing more detail at an unusably small scale. The original intentionally uses minimum touch target sizes; adapt geometry instead of scaling a landscape screenshot down.
 - Preserve scene and input coordinates through `toPortrait` / `toModel` conversion when dragging or drawing. Never store device pixels as play state.
