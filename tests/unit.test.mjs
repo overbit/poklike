@@ -46,7 +46,7 @@ test('world puzzle snaps close enough tiles into intended slot',()=>{
  assert.equal(s.tiles[0].x,244);assert.equal(s.tiles[0].y,151);
 });
 
-import {renderPortraitToy,toPortrait,toModel} from '../portrait-toys.js';
+import {renderPortraitToy,portraitFrame,toPortrait,toModel} from '../portrait-toys.js';
 for(const toy of toys){
  test(`${toy.title} has a portrait scene with direct interactive targets`,()=>{
   const art=renderPortraitToy(toy.id,initialState(toy.id));
@@ -129,9 +129,19 @@ for(const id of richWideIds){
  });
 }
 
-test('portrait artwork compensates circular shapes for differing device aspect ratios',()=>{
- const iphone=renderPortraitToy('cooking',initialState('cooking'),390/844).art;
- const tablet=renderPortraitToy('cooking',initialState('cooking'),768/1024).art;
- assert.ok(iphone.includes('<ellipse')&&tablet.includes('<ellipse'));
- assert.ok(!iphone.includes('undefined')&&!iphone.includes('NaN'));
+test('portrait aspect mapping preserves circles, touch areas and full 25-toy worlds',()=>{
+ for(const [width,height] of [[320,568],[390,844],[412,915],[768,1024],[820,1180]]){
+  const ratio=width/height,frame=portraitFrame(ratio);
+  assert.ok(Math.abs(frame.width/frame.height-ratio)<.001);
+  assert.ok(frame.width>=480&&frame.height>=840);
+  assert.ok(frame.offsetX>=0&&frame.offsetY>=0);
+  for(const toy of toys){
+   const art=renderPortraitToy(toy.id,initialState(toy.id),ratio);
+   assert.equal(art.viewBox,frame.viewBox);
+   assert.match(art.art,/<g data-world="true" transform="translate\(/);
+   assert.ok(art.art.includes('<circle'),'round parts must stay round');
+   assert.ok(!art.art.includes('<ellipse'),'do not stretch circles to fake device proportions');
+   assert.ok(!art.art.includes('NaN'));
+  }
+ }
 });
