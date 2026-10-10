@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Poklike mark">
+  <rect width="512" height="512" rx="110" fill="#f9f6ef"/>
+  <path d="M256 83 C275 83 292 109 301 155 C331 125 362 118 377 134 C393 150 384 183 350 219 C394 228 416 247 412 268 C408 288 379 302 331 304 C349 347 342 379 322 386 C301 394 277 374 256 336 C235 374 211 394 190 386 C170 379 163 347 181 304 C133 302 104 288 100 268 C96 247 118 228 162 219 C128 183 119 150 135 134 C150 118 181 125 211 155 C220 109 237 83 256 83Z" fill="#e76d56"/>
+  <circle cx="256" cy="249" r="62" fill="#efc95a"/>
+  <circle cx="235" cy="236" r="8" fill="#273845"/>
+  <circle cx="278" cy="236" r="8" fill="#273845"/>
+  <path d="M231 266 Q256 288 282 266" fill="none" stroke="#273845" stroke-width="8" stroke-linecap="round"/>
+</svg>
