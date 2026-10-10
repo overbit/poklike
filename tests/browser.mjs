@@ -160,10 +160,9 @@ async function run(){
  verify(await evaluate(`(()=>{const svg=document.querySelector('[data-stage]'),box=svg.getBoundingClientRect(),view=svg.viewBox.baseVal;return svg.dataset.layout==='portrait'&&Math.abs(view.width/view.height-box.width/box.height)<.004})()`),'rotation returns to portrait without losing toy selection');
  await evaluate(`location.hash='#/toy/busy-book'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='busy-book'`,'busy book portrait');
  const book=await evaluate(`(()=>{
-  const svg=document.querySelector('[data-stage]'),key='0:0';
+  const svg=document.querySelector('[data-stage]'),before=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].page;
   svg.querySelector('[data-act="book:0"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
-  const touched=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].touched.includes(key);
-  const before=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].page;
+  const touched=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].touched.includes(before+':0');
   svg.dispatchEvent(new PointerEvent('pointerdown',{pointerId:303,clientX:310,clientY:460,bubbles:true}));
   svg.dispatchEvent(new PointerEvent('pointerup',{pointerId:303,clientX:90,clientY:460,bubbles:true}));
   const after=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-book'].page;
