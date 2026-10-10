@@ -48,7 +48,7 @@ async function run(){
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
- const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v2');return (await c.keys()).length})()`);
+ const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v3');return (await c.keys()).length})()`);
  verify(cached>=7,'complete offline bundle is precached');
  await snapshot('collection-desktop');
  for(const toy of toys){
@@ -113,6 +113,28 @@ async function run(){
  await evaluate(`location.hash='#/toy/cooking'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'mobile toy');
  await snapshot('toy-mobile');
  verify(await evaluate(`document.documentElement.scrollWidth<=innerWidth+2`),'mobile toy has no horizontal overflow');
+ const portrait=await evaluate(`(()=>{const a=document.querySelector('.toy-canvas'),b=document.querySelector('.stage-wrap').getBoundingClientRect(),v=a.viewBox.baseVal;return {height:b.height,width:b.width,innerHeight:innerHeight,worldWidth:v.width,worldHeight:v.height,arrows:document.querySelector('.camera-controls').hidden,home:document.querySelector('[data-home]').getBoundingClientRect().width,reset:document.querySelector('[data-reset]').getBoundingClientRect().width}})()`);
+ verify(portrait.height>=portrait.innerHeight*.97,'iPhone portrait: playground fills at least 97% of viewport height');
+ verify(portrait.worldWidth<500&&portrait.worldHeight>=590,'iPhone portrait: camera zooms to full-height interactive art');
+ verify(!portrait.arrows,'iPhone portrait: pan arrows are available');
+ verify(portrait.home>=44&&portrait.reset>=44,'iPhone portrait: navigation has touch-size buttons');
+ const originalX=await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.x`);
+ await evaluate(`document.querySelector('[data-pan="1"]').click()`);
+ verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.x`)>originalX+5,'camera arrow reveals more of the scene');
+ await evaluate(`document.querySelector('[data-fit]').click()`);
+ verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.width===960`),'See all reveals every part of the playground');
+ await evaluate(`document.querySelector('[data-fit]').click()`);
+ verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.width<500`),'Fill screen restores immersive play');
+ await send('Emulation.setDeviceMetricsOverride',{width:412,height:915,deviceScaleFactor:1,mobile:true});
+ await wait(180);
+ const android=await evaluate(`(()=>({h:document.querySelector('.stage-wrap').getBoundingClientRect().height,visible:innerHeight,cropped:document.querySelector('.toy-canvas').viewBox.baseVal.width<500}))()`);
+ verify(android.h>=android.visible*.97&&android.cropped,'Android portrait: full-height play and large art');
+ await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'landscapePrimary',angle:90}});
+ await wait(180);
+ const landscape=await evaluate(`(()=>({h:document.querySelector('.stage-wrap').getBoundingClientRect().height,visible:innerHeight,w:document.querySelector('.toy-canvas').viewBox.baseVal.width}))()`);
+ verify(landscape.h>=landscape.visible*.97&&landscape.w>=940,'Phone landscape: entire width of scene remains playable');
+ await snapshot('toy-landscape');
+
  verify(errors.length===0,'browser produced no uncaught page exceptions: '+errors.join(','));
  verify(requests.length===0,'browser produced no 5xx responses: '+requests.join(','));
  process.stdout.write(`\nPASSED ${assertions} browser assertions, 25/25 online and 25/25 offline toy opens\n`);
