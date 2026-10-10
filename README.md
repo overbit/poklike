@@ -1,44 +1,29 @@
 # Poklike
 
-A free, independent, offline-first little playroom for children. 25 original creative activities inspired by publicly documented open-ended play mechanics; **not** affiliated with Pok Pok and **not** a copy of proprietary graphics, recordings, characters or code.
+A free, independent, offline-first playroom for children. It contains 25 original interactive activity scenes inspired by publicly described, open-ended Pok Pok mechanics. This is not affiliated with Pok Pok and does **not** copy its proprietary graphics, animation, code, characters or sounds.
 
-## Play
+**Play:** https://overbit.github.io/poklike/
 
-Open on a static HTTPS host. Wait for the **Ready offline** indicator before disconnecting, then install or add it to your home screen. All 25 activities are precached together before the indicator appears; opening them the first time does not require internet once ready. In Safari on iOS use **Share → Add to Home Screen**. On Android use the browser **Install app** or **Add to Home Screen** option. Local creations and preferences are only saved in browser storage, so clearing browser data removes them. Back up in **Grown-ups & settings** if needed.
+## Install on iPhone, Android and tablets
 
-## Full-screen play on phones
+Open the site in Safari (iOS) or Chrome (Android), wait for **Ready offline**, then use **Add to Home Screen** / **Install app**. Once the service worker has downloaded every game file, all 25 toys open without internet. Local saves remain on this browser/device unless browser data is cleared or the OS evicts site storage. The adult-gated settings area provides backup export and restore.
 
-On Android and iPhone, every toy uses an immersive, full-height canvas instead of shrinking a landscape scene into a card. Explore the rest of the wide play world by **swiping the background** or pressing the edge arrows. **See all** provides an overview; **Fill screen** returns to the large interactive view. The top bar and tool tray are inset around notches and home indicators. Install the PWA using **Add to Home Screen** to hide browser chrome.
+## Mobile interaction
 
-## Native Android and iPhone apps
+The portrait gameplay is **composed for the phone**, not a cropped 960x600 landscape page. Each of the 25 activities has a 480x840 SVG portrait scene with its own controls. Tap or drag the pieces inside each toy, use your finger to draw, experiment with Busy Board's sliding controls, and combine the musical shapes. The only persistent screen-level buttons are home and restart. Wide layouts are still available when rotating the device.
 
-The [native app source and build instructions](native/README.md) live under `native/`. These are React Native apps using native SVG elements and native-stack navigation—not WebView wrappers. Both Android and iOS JavaScript bundles and the shared camera/game-state tests pass in CI. Separate GitHub Actions workflows attempt a standalone Android APK and unsigned iPhone Simulator app; physical iPhone distribution requires Apple signing credentials. Native installations work without network access after the app binary is installed.
+This is an original interactive interpretation rather than a verified frame-perfect replica. In particular, the original Busy Board, Town and Busy Book have much deeper behavior than the present implementation. See [replica/recon.md](replica/recon.md) and [replica/features.csv](replica/features.csv) for source evidence and unverified details. The two provided YouTube URLs could not be fetched here, so their specific contents are not claimed to have been reviewed.
 
-```sh
-cd native
-npm install
-npm run check
-npm start       # Expo Go / device pairing
-npm run android # Android Studio emulator or connected Android device
-npm run ios     # macOS / Xcode Simulator or connected iPhone
-```
+## Develop and test
 
-## Develop
-
-No dependencies, accounts, hosted backend, tracking, API keys or build process. The shipped app consists of static HTML, JavaScript, CSS, icons and a service worker.
+Requires Node.js 20+ and Python 3 for the static server. Chromium is needed for end-to-end tests.
 
 ```sh
-npm run serve          # Python 3 static server at http://localhost:8000
-npm test               # Node.js 20+ toy mechanics unit tests
-npm run test:browser   # Browser and offline E2E (Chromium + Python 3)
+npm run serve
+npm test
+npm run test:browser
 ```
 
-The browser test suite opens all 25 toys online and again with emulated network-offline, tests pointer drawing and storage persistence, adult protections, plus desktop/mobile screenshot and layout assertions. Automated browser testing must be run on an environment allowed to browse its own localhost (for example GitHub Actions). Generated `test-artifacts/` is ignored.
+There are no runtime package dependencies or CDN requests. The project has no Android/iOS native targets; the **installed web app** is the phone and tablet delivery format. A GitHub Actions verification workflow checks all 25 toys online and offline, their responsive portrait layouts, and touch interaction. The Pages workflow publishes the verified static assets from `main` (its own HTTPS asset check runs after deployment).
 
-## Source-grounded scope
-
-See [`replica/recon.md`](replica/recon.md), [`replica/features.csv`](replica/features.csv), [`replica/test-plan.md`](replica/test-plan.md) and [`replica/bugs.md`](replica/bugs.md) for evidence, behaviour-matching limits, tests and open parity items. Individual toy depths and movements are **not** claimed identical to the commercial app; compare against user-provided screen recordings before marking parity complete.
-
-## Public distribution
-
-The deployment workflow publishes static app assets from `main` to GitHub Pages at **https://overbit.github.io/poklike/** on each push to `main` (or by manual workflow dispatch). Unit and browser/offline checks run in a separate `Verify Poklike` workflow; review both workflow results before treating a release as verified. **One-time setup:** Open repository **Settings → Pages → Build and deployment → Source: GitHub Actions**. The workflow cannot create a Pages site until this option is selected; the GitHub Actions token lacks permission to create the site. Once configured, run **Actions → Deploy Poklike to GitHub Pages → Run workflow** (or push to `main`). The public GitHub Pages site is available to anyone when publishing succeeds. No backend is needed. Changing app assets requires updating the cache `VERSION` in `sw.js`; an update precaches the full bundle before replacing the previous version.
+The browser tests run best in GitHub Actions: a managed local browser may block requests to `127.0.0.1`. Changes to the offline asset list require incrementing `VERSION` in `sw.js` and updating the expected cache name in tests.

@@ -29,3 +29,5 @@ All 25 distinct toy scenes are implemented with native SVG pointer/click mechani
 - 26 Busy Book: **partial** — unit tested; awaiting live browser test and supplied original recordings.
 
 Shell: PWA install, full-cache service worker verification, offline deep-link reopens, adult local controls and saved progress implemented; cross-platform verification pending.
+
+2026-10-10 | S02-S26 | responsive portrait renderer introduced for all 25, with direct stage actions instead of cropped landscape camera. Busy Board dial + slider input, Musical Blobs collision feedback, portrait drawing model coordinate mapping. Original-video parity remains partial, pending user recordings. Tests: Node unit + Chromium offline/responsive in GitHub Actions; physical-device check outstanding.

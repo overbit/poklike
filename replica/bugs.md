@@ -2,11 +2,10 @@
 
 Only reproducible defects go here. Unverified compatibility and exact Pok Pok scene parity are tracked in `test-plan.md` and `features.csv`, not mislabeled as passed.
 
-## Deployment blocker — GitHub Pages not enabled (external configuration)
+None recorded yet.
 
-- **Evidence:** GitHub Actions run `38060374679` failed at `actions/configure-pages@v5` with `Resource not accessible by integration` when creating the Pages site.
-- **Expected:** Deployment workflow publishes the built static site.
-- **Actual:** Pages site creation requires repository Pages source to be enabled by an administrator; the available GitHub app action cannot perform that setting change.
-- **Resolution:** Select **Settings → Pages → Source: GitHub Actions**. Then rerun the deploy workflow. Not an application-code defect.
+## Mobile world cropping (S2; fixed in responsive refactor)
 
-No reproduced app defects in the passing tests.
+- Reproduced in the preceding 390x844 Cooking browser screenshot: bowl fills the screen, ingredient controls appear offscreen, persistent camera arrows and a bottom toolbar obstruct play.
+- Expected: important objects and tappable ingredients visible on portrait phones without a camera pan.
+- Fix: replace cropped 960x600 viewBox with an individual 480x840 layout for every toy; control hit regions and drawing/drag transforms adapt to portrait. Verification covered by F06-H1 and F06-H3; browser/real-device validation tracked separately.
