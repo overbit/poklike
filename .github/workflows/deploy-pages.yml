@@ -35,3 +35,30 @@ jobs:
       - name: Publish GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify published HTTPS assets
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          site="${SITE_URL%/}"
+          test -n "$site"
+          for path in index.html styles.css app.js toys.js sw.js manifest.webmanifest icons/poklike.svg icons/poklike-180.png icons/poklike-192.png icons/poklike-512.png; do
+            echo "Checking public asset: $path"
+            response="$(mktemp)"
+            matched=0
+            for attempt in 1 2 3 4 5; do
+              if curl -fLsS --retry 3 --retry-all-errors --retry-delay 2 --connect-timeout 10 --max-time 25 \
+                -H 'Cache-Control: no-cache' -o "$response" "$site/$path" && cmp -s "$path" "$response"; then
+                matched=1
+                break
+              fi
+              sleep 4
+            done
+            rm -f "$response"
+            if [ "$matched" -ne 1 ]; then
+              echo "::error::Public asset unavailable or differs from the checked-out commit: $path"
+              exit 1
+            fi
+          done
+          echo "All ten published assets match the repository commit."
