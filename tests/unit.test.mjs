@@ -59,6 +59,16 @@ for(const toy of toys){
 test('model and portrait coordinates round-trip for touch drag and drawing',()=>{
  const a={x:400,y:320};const b=toPortrait(a);assert.deepEqual(toModel(b),a);
 });
+test('Town residents can visit every place by dropping them on a building',()=>{
+ const s=initialState('town');
+ for(const [px,py,index] of [[125,285,0],[345,285,1],[125,476,2],[345,476,3]]){
+  assert.equal(moveDrag('town',s,'person:0',px*2,py/1.4,'portrait'),true);
+  assert.equal(s.mode,index);
+ }
+ const before=s.mode;
+ moveDrag('town',s,'vehicle',390,240,'wide');
+ assert.equal(s.mode,before,'wide Town must not use portrait drop-zone math');
+});
 test('all lifted portrait drags round-trip without jumping',()=>{
  const inputs=[
   ['house','figure',s=>s.figure],['islands','boat',s=>s.boat],
