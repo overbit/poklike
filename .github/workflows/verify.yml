@@ -1,0 +1,32 @@
+name: Verify Poklike
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  unit-and-offline-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run unit tests
+        run: npm test
+      - name: Find installed Chromium or Chrome
+        run: |
+          BROWSER=$(command -v chromium || command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser)
+          test -n "$BROWSER"
+          echo "CHROMIUM=$BROWSER" >> "$GITHUB_ENV"
+      - name: Run offline Chromium browser tests
+        run: npm run test:browser
+      - name: Save screenshots and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: poklike-browser-captures
+          path: test-artifacts/
+          if-no-files-found: ignore
