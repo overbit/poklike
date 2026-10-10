@@ -23,11 +23,11 @@ export function restoreStates(snapshot){
 }
 export function changeState(previous,id,action){
  if(!Object.prototype.hasOwnProperty.call(previous,id))return previous;
- const next={...previous},state=structuredClone(previous[id]);interact(id,state,action);next[id]=state;return next;
+ const next={...previous},state=JSON.parse(JSON.stringify(previous[id]));interact(id,state,action);next[id]=state;return next;
 }
 export function dragState(previous,id,key,x,y){
  if(!Object.prototype.hasOwnProperty.call(previous,id))return previous;
- const state=structuredClone(previous[id]);
+ const state=JSON.parse(JSON.stringify(previous[id]));
  if(!moveDrag(id,state,key,x,y))return previous;
  return {...previous,[id]:state};
 }

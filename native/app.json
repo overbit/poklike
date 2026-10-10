@@ -22,6 +22,7 @@
       }
     },
     "plugins": [
+      "expo-router",
       [
         "expo-audio",
         {
@@ -34,6 +35,7 @@
     ],
     "extra": {
       "privacy": "Offline local storage only; no tracking"
-    }
+    },
+    "scheme": "poklike"
   }
 }
