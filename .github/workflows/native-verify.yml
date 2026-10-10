@@ -1,0 +1,55 @@
+name: Verify native Android and iOS bundles
+on:
+  push:
+    branches: [main, 'feat/**']
+    paths:
+      - 'native/**'
+      - 'toys.js'
+      - '.github/workflows/native-verify.yml'
+  pull_request:
+    paths:
+      - 'native/**'
+      - 'toys.js'
+      - '.github/workflows/native-verify.yml'
+permissions:
+  contents: read
+jobs:
+  native-bundles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install native dependencies
+        run: npm install --prefix native --no-audit --no-fund
+      - name: Verify shared native toy and camera logic
+        run: npm run check --prefix native
+      - name: Bundle Android app offline
+        working-directory: native
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: npx expo export --platform android --output-dir dist-android --clear
+      - name: Bundle iOS app offline
+        working-directory: native
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: npx expo export --platform ios --output-dir dist-ios --clear
+      - name: Verify native bundles contain offline toy scenes
+        run: |
+          test -f native/dist-android/metadata.json
+          test -f native/dist-ios/metadata.json
+          grep -rq "Little worlds" native/dist-android || test -d native/dist-android/_expo
+          test -s native/assets/tone.wav
+      - name: Save bundle details
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-bundle-metadata
+          path: |
+            native/dist-android/metadata.json
+            native/dist-ios/metadata.json
+          if-no-files-found: ignore

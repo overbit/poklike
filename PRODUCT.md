@@ -3,10 +3,10 @@
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
-web
+adaptive
 
 ## Stack
-Delegated: zero-dependency, installable progressive web app using native web APIs. This reduces offline failure modes and avoids runtime CDN or package dependencies.
+Web: zero-dependency installable PWA. Native Android/iOS: Expo Router and React Native components with react-native-svg, offline-bundled scenes, and local AsyncStorage. All three clients share the same original toy mechanics.
 
 ## Users
 Children approximately ages 2–8 exploring open-ended educational toys, with adults managing the device and local settings.
