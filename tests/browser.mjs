@@ -139,6 +139,8 @@ async function run(){
  verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.width===960`),'See all reveals every part of the playground');
  await evaluate(`document.querySelector('[data-fit]').click()`);
  verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.width<500`),'Fill screen restores immersive play');
+ const swiped=await evaluate(`(()=>{const svg=document.querySelector('[data-stage]'),box=svg.getBoundingClientRect(),x=box.x+box.width*.7,y=box.y+box.height*.45,before=svg.viewBox.baseVal.x,id=911;for(const [type,at] of [['pointerdown',x],['pointermove',x-box.width*.22],['pointerup',x-box.width*.22]])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:id,clientX:at,clientY:y}));return svg.viewBox.baseVal.x>before+5})()`);
+ verify(swiped,'swiping empty stage space pans the toy camera');
  await send('Emulation.setDeviceMetricsOverride',{width:412,height:915,deviceScaleFactor:1,mobile:true});
  await wait(180);
  const android=await evaluate(`(()=>({h:document.querySelector('.stage-wrap').getBoundingClientRect().height,visible:innerHeight,cropped:document.querySelector('.toy-canvas').viewBox.baseVal.width<500}))()`);
