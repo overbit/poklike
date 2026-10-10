@@ -64,6 +64,31 @@ test('Busy Board dials support repeatable tactile interactions',()=>{
  assert.equal(st.dials[0],(before+1)%4);interact('busy-board',st,'dial:0');
  assert.equal(st.dials[0],(before+2)%4);
 });
+test('Busy Board gears mesh while independent switches power the lamp',()=>{
+ const state=initialState('busy-board'),a=state.dials.slice();
+ interact('busy-board',state,'gear:0');
+ assert.equal(state.dials[0],(a[0]+1)%4);
+ assert.equal(state.dials[1],(a[1]+3)%4);
+ interact('busy-board',state,'switch:0');
+ assert.equal(state.switches[0],true);
+ assert.match(renderPortraitToy('busy-board',state).art,/Turn connected gear/);
+});
+test('Busy Book has illustrations with reversible discoveries on every page',()=>{
+ const state=initialState('busy-book');
+ for(let page=0;page<5;page++){
+  const screen=renderPortraitToy('busy-book',state).art;
+  assert.match(screen,/data-act="book:0"/);
+  assert.match(screen,/data-act="book:1"/);
+  assert.match(screen,/data-act="book:2"/);
+  const key=`${page}:0`;
+  interact('busy-book',state,'book:0');
+  assert.ok(state.touched.includes(key));
+  interact('busy-book',state,'book:0');
+  assert.ok(!state.touched.includes(key));
+  interact('busy-book',state,'next');
+ }
+ assert.equal(state.page,0);
+});
 test('Musical Blobs register nearby collisions and remain draggable',()=>{
  const st=initialState('musical-blobs');const old=st.collisions;
  assert.equal(moveDrag('musical-blobs',st,'blob:0',400,350),true);
