@@ -191,7 +191,31 @@ async function run(){
  })()`);
  verify(linkedGear,'Busy Board gears spin together in opposite directions');
  await snapshot('busy-board-portrait');
- for(const dims of [[320,568],[412,915]]){
+ await evaluate(`location.hash='#/toy/world-puzzle'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='world-puzzle'`,'portrait puzzle');
+ const snapped=await evaluate(`(()=>{
+  const svg=document.querySelector('[data-stage]'),piece=svg.querySelector('[data-drag="tile:0"]'),transform=piece.getAttribute('transform');
+  const match=transform.match(/translate\\(([-\\d.]+)[ ,]([-\\d.]+)\\)/);
+  const ox=Number(svg.dataset.offsetX||0),oy=Number(svg.dataset.offsetY||0);
+  const at=(x,y)=>{const p=svg.createSVGPoint();p.x=x+ox;p.y=y+oy;const q=p.matrixTransform(svg.getScreenCTM());return {x:q.x,y:q.y};};
+  const start=at(Number(match[1]),Number(match[2])),end=at(122,303),id=331;
+  piece.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:id,clientX:start.x,clientY:start.y}));
+  svg.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:id,clientX:end.x,clientY:end.y}));
+  svg.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:id,clientX:end.x,clientY:end.y}));
+  const st=JSON.parse(localStorage.getItem('poklike-state-v1'))['world-puzzle'];
+  const tile=svg.querySelector('[data-drag="tile:0"]')?.getAttribute('transform');
+  return st.tiles[0].x===244&&st.tiles[0].y===151&&tile?.includes('122 ');
+ })()`);
+ verify(snapped,'puzzle piece visually snaps to a matching portrait board slot');
+ await snapshot('puzzle-portrait');
+ await evaluate(`location.hash='#/toy/town'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='town'`,'portrait town');
+ const visited=await evaluate(`(()=>{
+  document.querySelector('[data-act="building:3"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));
+  const s=JSON.parse(localStorage.getItem('poklike-state-v1')).town;
+  return s.mode===3&&document.querySelector('[data-stage]').textContent.includes('Market');
+ })()`);
+ verify(visited,'Town buildings open distinct places by direct touch');
+ await snapshot('town-portrait');
+  for(const dims of [[320,568],[412,915]]){
   await send('Emulation.setDeviceMetricsOverride',{width:dims[0],height:dims[1],deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
   await wait(140);
   verify(await evaluate(`(()=>{const stage=document.querySelector('[data-stage]'),rect=stage.getBoundingClientRect();return Math.abs(stage.viewBox.baseVal.width/stage.viewBox.baseVal.height-rect.width/rect.height)<.004&&rect.height>=innerHeight*.98&&document.documentElement.scrollWidth<=innerWidth+2})()`),`${dims[0]}px portrait keeps complete stage and no overflow`);
