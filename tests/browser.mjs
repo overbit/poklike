@@ -77,6 +77,7 @@ async function run(){
  verify(status==='Ready offline','offline status is confirmed by service worker');
  const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v8');return (await c.keys()).length})()`);
  verify(cached>=12,'all original and responsive assets are precached');
+ verify(await evaluate(`document.querySelector('.toy-card.featured svg')?.querySelectorAll('path[stroke]').length>=5`),'empty Drawing gallery thumbnail shows original sample artwork without saving');
  await snapshot('collection-desktop');
  for(const toy of toys){
   await evaluate(`location.hash='#/toy/${toy.id}'`);
@@ -206,6 +207,12 @@ async function run(){
   return st.tiles[0].x===244&&st.tiles[0].y===151&&tile?.includes('122 ');
  })()`);
  verify(snapped,'puzzle piece visually snaps to a matching portrait board slot');
+ const unobstructed=await evaluate(`(()=>{
+  const svg=document.querySelector('[data-stage]'),shuffle=svg.querySelector('[data-act="shuffle"]'),tiles=[...svg.querySelectorAll('[data-drag^="tile:"]')];
+  const a=shuffle.getBoundingClientRect();
+  return tiles.every(tile=>{const b=tile.getBoundingClientRect();return b.top>a.bottom+10;});
+ })()`);
+ verify(unobstructed,'portrait puzzle staging tray does not cover its shuffle control');
  await snapshot('puzzle-portrait');
  await evaluate(`location.hash='#/toy/town'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='town'`,'portrait town');
  const visited=await evaluate(`(()=>{
