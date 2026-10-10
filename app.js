@@ -219,7 +219,7 @@ function pointerUp(ev){
  if(d.kind==='move'){
   const model=d.portrait?portraitDragToModel(currentToy,{x:d.x,y:d.y}):{x:d.x,y:d.y};
   const state=loadState(currentToy),before=state.collisions||0;
-  moveDrag(currentToy,state,d.key,model.x,model.y);
+  moveDrag(currentToy,state,d.key,model.x,model.y,d.portrait?'portrait':'wide');
   if(preferences.sound){
    sound(245+(d.key.length*41)%340,.12);
    if(currentToy==='musical-blobs'&&state.collisions>before){
@@ -335,7 +335,7 @@ document.addEventListener('keydown',ev=>{
   ev.preventDefault();
   const [x,y]=((drag.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]([\d.]+)\)/)||[]).slice(1).map(Number);
   const dx=ev.key==='ArrowRight'?20:ev.key==='ArrowLeft'?-20:0,dy=ev.key==='ArrowDown'?20:ev.key==='ArrowUp'?-20:0;
-  if(Number.isFinite(x)&&Number.isFinite(y)){const p=isPortraitPlay()?portraitDragToModel(currentToy,{x:x+dx,y:y+dy}):{x:x+dx,y:y+dy};if(moveDrag(currentToy,loadState(currentToy),drag.dataset.drag,p.x,p.y)){save();updateStage();}}
+  if(Number.isFinite(x)&&Number.isFinite(y)){const p=isPortraitPlay()?portraitDragToModel(currentToy,{x:x+dx,y:y+dy}):{x:x+dx,y:y+dy};if(moveDrag(currentToy,loadState(currentToy),drag.dataset.drag,p.x,p.y,isPortraitPlay()?'portrait':'wide')){save();updateStage();}}
  }
  const control=ev.target instanceof Element?ev.target.closest('svg [data-act]'):null;
  if(control&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();handleAction(control.dataset.act);}

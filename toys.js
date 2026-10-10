@@ -465,14 +465,21 @@ export function interact(id,s,action){
  }
  return s;
 }
-export function moveDrag(id,s,key,x,y){
+export function moveDrag(id,s,key,x,y,layout='wide'){
  x=Math.max(60,Math.min(885,v(x)));y=Math.max(85,Math.min(520,v(y)));
  const [type,num]=key.split(':'),n=Number(num);
  if(id==='musical-blobs'&&type==='blob'&&s.blobs[n]){s.blobs[n]={x,y};if(s.blobs.some((p,i)=>i!==n&&Math.hypot(p.x-x,p.y-y)<175))s.collisions=(s.collisions||0)+1;return true;}
  if(id==='phonics'&&type==='phoneme'&&Number.isInteger(n)&&n>=0&&n<3){if(y>=330)s.placed[n]=true;return true;}
  if(id==='town'){
-  if(type==='vehicle'){s.vehicle={x,y};return true;}
-  if(type==='person'&&s.people[n]){s.people[n]={x,y};return true;}
+  // Touching a building with a resident or vehicle changes the active place.
+  const visit=()=>{
+   if(layout!=='portrait')return;
+   const px=x/2,py=y*1.4;
+   if(px>=25&&px<=458&&py>=195&&py<=589)
+    s.mode=(py>=394?2:0)+(px>=240?1:0);
+  };
+  if(type==='vehicle'){s.vehicle={x,y};visit();return true;}
+  if(type==='person'&&s.people[n]){s.people[n]={x,y};visit();return true;}
  }
  if(id==='house'&&type==='figure'){s.figure={x,y};return true;}
  if(id==='forest'&&type==='creature'&&s.creatures[n]){s.creatures[n]={x,y};return true;}
