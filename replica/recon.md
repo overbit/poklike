@@ -66,3 +66,15 @@ The previous prototype scaled a 960x600 scene into small phone widths or cropped
 - **F09 Musical collision:** drag a shape onto another -> state change and gentle musical feedback.
 
 Screens S02-S26 now have explicit mobile portrait compositions, but video-verified per-toy depth remains **partial**, not equivalent. Source video frames must be supplied before a truthful frame-by-frame diff is possible.
+
+
+### Newly verified gameplay details, not from the inaccessible videos
+
+| Reference | Observable gameplay detail | Our implementation |
+| --- | --- | --- |
+| https://playpokpok.com/blog/new-toy-cooking/ | Cooking starts with dinner guests and their cravings, then permits multiple kitchen procedures (sink, stove, blender, oven), serving and cleanup. | Guest selection, cravings, serving and kitchen/sink/heat/ingredients/stir are interactive. Blender/oven/cleaning and expanded guest variety are **not** replicated yet. |
+| https://playpokpok.com/blog/new-toy-code-factory/ | Factory constantly moves, workers follow routes, director buttons change outcomes, crates turn into goods, messes can be cleaned, and finished products reach the market. | Continuous conveyor/worker loop, changeable director buttons, crate production, market goods, cleanup. Simplified outcomes and animations. |
+| https://playpokpok.com/blog/new-toy-phonics/ | Players drag grapheme units into Elkonin boxes, hear phonemes and blended sequences, and build full words. | Movable letter chunks with three sound slots, word progress and reset. No verified recorded phoneme/voice assets; spoken sounds are not yet equivalent. |
+| https://playpokpok.com/blog/new-toy-geometry/ | Drag shapes from sidebar, rotate with taps, discard via black hole bin. | Draggable shape collection; exact rotation/discard and composition variety remain open. |
+
+The status of V01/V02 remains **uninspected**. These additional facts are sourced from official text, not claims about those particular video frames.
