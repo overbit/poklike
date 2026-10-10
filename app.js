@@ -157,6 +157,11 @@ function pointerDown(ev){
   setSlider(index,at.x,slider);
   try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();return;
  }
+ if(currentToy==='busy-book'&&!target?.closest('[data-act],[data-drag]')){
+  gestures.set(ev.pointerId,{kind:'page',startX:ev.clientX,startY:ev.clientY});
+  try{svg.setPointerCapture(ev.pointerId);}catch{}
+  ev.preventDefault();return;
+ }
  if(currentToy==='drawing'&&!target?.closest('[data-act]')){
   const inBounds=portrait?at.x>22&&at.x<457&&at.y>177&&at.y<710:at.y<478&&at.y>35&&at.x>60&&at.x<900;
   if(!inBounds)return;
@@ -175,6 +180,7 @@ function setSlider(index,x,element){
  if(index<0||index>1)return;
  const value=Math.max(0,Math.min(1,(x-64)/350));
  loadState('busy-board').sliders[index]=value;
+ element.setAttribute('aria-valuenow',String(Math.round(value*100)));
  element.querySelector('[data-slider-fill]')?.setAttribute('width',String(350*value));
  element.querySelectorAll('[data-slider-knob]').forEach(knob=>knob.setAttribute('cx',String(64+350*value)));
  sliderIgnoreClickUntil=performance.now()+450;
@@ -200,6 +206,10 @@ function pointerMove(ev){
 function pointerUp(ev){
  const d=gestures.get(ev.pointerId);if(!d)return;
  gestures.delete(ev.pointerId);
+ if(d.kind==='page'&&ev.type==='pointerup'){
+  const dx=ev.clientX-d.startX,dy=ev.clientY-d.startY;
+  if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.4)handleAction(dx<0?'next':'prev');
+ }
  if(d.kind==='move'){
   const model=d.portrait?toModel({x:d.x,y:d.y}):{x:d.x,y:d.y};
   const state=loadState(currentToy),before=state.collisions||0;
@@ -303,7 +313,17 @@ app.addEventListener('click',ev=>{
 });
 document.addEventListener('keydown',ev=>{
  if(ev.key==='Escape'&&!document.querySelector('dialog[open]')&&currentToy){location.hash='#/';return;}
+ const slider=ev.target instanceof Element?ev.target.closest('svg [data-slider]'):null;
+ if(slider&&currentToy==='busy-board'&&['ArrowLeft','ArrowRight'].includes(ev.key)){
+  ev.preventDefault();
+  const i=Number(slider.dataset.slider),st=loadState('busy-board');
+  st.sliders[i]=Math.max(0,Math.min(1,Math.round((st.sliders[i]+(ev.key==='ArrowRight'?.1:-.1))*10)/10));
+  save();updateStage();return;
+ }
  const drag=ev.target instanceof Element?ev.target.closest('svg [data-drag]'):null;
+ if(!drag&&currentToy==='busy-book'&&ev.target instanceof Element&&ev.target.closest('svg')&&['ArrowLeft','ArrowRight'].includes(ev.key)){
+  ev.preventDefault();handleAction(ev.key==='ArrowRight'?'next':'prev');return;
+ }
  if(drag&&currentToy&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(ev.key)){
   ev.preventDefault();
   const [x,y]=((drag.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]([\d.]+)\)/)||[]).slice(1).map(Number);
