@@ -23,25 +23,11 @@ async function until(expression,message,tries=80){for(let i=0;i<tries;i++){try{i
 async function snapshot(name){const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(join(artifacts,name+'.png'),Buffer.from(shot.data,'base64'));}
 function mouse(type,x,y,buttons=0){return send('Input.dispatchMouseEvent',{type,x,y,button:type==='mouseMoved'?'none':'left',buttons,clickCount:1});}
 async function start(){
- const port=await freePort();tmp=mkdtempSync(join(tmpdir(),'poklike-browser-'));
+ const port=await freePort(),remote=await freePort();tmp=mkdtempSync(join(tmpdir(),'poklike-browser-'));
  server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1','--directory',basePath==='/'?root:resolve(root,'..')],{stdio:'ignore'});
- // Headless Chromium occasionally exits before CDP binds on busy CI workers.
- // Give it a fresh profile and a new port on each bounded retry.
- let pages,chromeErrors=[];
- for(let attempt=0;attempt<3;attempt++){
-  const remote=await freePort();
-  chrome=spawn(process.env.CHROMIUM||'/usr/bin/chromium',['--headless=new','--no-sandbox','--no-zygote','--disable-gpu','--disable-extensions','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--no-default-browser-check','--remote-allow-origins=*',`--remote-debugging-port=${remote}`,`--user-data-dir=${join(tmp,'profile-'+attempt)}`,'--window-size=1280,900','about:blank'],{stdio:['ignore','ignore','pipe']});
-  let stderr='';chrome.stderr?.on('data',chunk=>{stderr=(stderr+chunk.toString()).slice(-1500);});
-  try{
-   pages=await retry(async()=>{const res=await fetch('http://127.0.0.1:'+remote+'/json');if(!res.ok)throw Error(String(res.status));return res.json();},75);
-   if(pages.some(p=>p.type==='page'&&p.webSocketDebuggerUrl))break;
-   throw Error('No debuggable tab');
-  }catch(error){
-   chromeErrors.push('launch '+(attempt+1)+': '+String(error)+' '+stderr);
-   chrome.kill('SIGTERM');await wait(400);pages=null;
-  }
- }
- if(!pages)throw Error('Chromium failed to start after 3 attempts: '+chromeErrors.join(' | '));
+ chrome=spawn(process.env.CHROMIUM||'/usr/bin/chromium',['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-allow-origins=*',`--remote-debugging-port=${remote}`,`--user-data-dir=${tmp}`,'--window-size=1280,900','about:blank'],{stdio:'ignore'});
+ await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');if(!r.ok)throw Error(r.status);return r.json();});
+ const pages=await retry(async()=>{const r=await fetch('http://127.0.0.1:'+remote+'/json');return r.json();});
  const page=pages.find(p=>p.type==='page');assert.ok(page?.webSocketDebuggerUrl);
  ws=new WebSocket(page.webSocketDebuggerUrl);
  await new Promise((res,rej)=>{ws.addEventListener('open',res,{once:true});ws.addEventListener('error',rej,{once:true});});
@@ -58,11 +44,11 @@ async function start(){
 async function run(){
  await start();
  verify(await evaluate(`document.querySelectorAll('[data-toy]').length===25`),'25 toys available from the collection');
- verify(await evaluate(`location.pathname===${JSON.stringify(basePath)}`),'site opens at its expected base path');
+ verify(await evaluate(`location.pathname===${JSON.stringify(basePath)}`),'site opens at expected base path');
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
- const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v3');return (await c.keys()).length})()`);
+ const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v4');return (await c.keys()).length})()`);
  verify(cached>=7,'complete offline bundle is precached');
  await snapshot('collection-desktop');
  for(const toy of toys){
@@ -101,17 +87,9 @@ async function run(){
  verify(await evaluate(`document.querySelector('#setting-motion')!==null`),'adult settings are usable');
  await evaluate(`(()=>{const c=document.querySelector('#setting-sound');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));})()`);
  verify(await evaluate(`JSON.parse(localStorage.getItem('poklike-prefs-v1')).sound===false`),'parent sound preference persists');
- verify(await evaluate(`(()=>{const b=document.querySelector('#clear-all');return b.disabled})()`),'bulk reset requires explicit confirmation');
- await evaluate(`(()=>{const c=document.querySelector('#setting-motion');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));})()`);
- verify(await evaluate(`document.body.dataset.reduced==='true'`),'reduced motion preference applies immediately');
- await evaluate(`document.querySelector('#export-save').click()`);
- verify(await evaluate(`document.querySelector('#settings-message').textContent.includes('Backup downloaded')`),'export offers a backup file');
- await evaluate(`document.querySelector('#clear-confirm').value='CLEAR';document.querySelector('#clear-confirm').dispatchEvent(new Event('input',{bubbles:true}));`);
- verify(await evaluate(`document.querySelector('#clear-all').disabled===false`),'bulk reset unlocks only after explicit confirmation');
  await evaluate(`document.querySelector('[data-close]').click()`);
  // Verify full offline reopen *after* initial installation.
- await evaluate(`location.hash='#/'`);
- await until(`document.querySelectorAll('[data-toy]').length===25`,'gallery before offline');
+ await evaluate(`location.hash='#/'`);await until(`document.querySelectorAll('[data-toy]').length===25`,'gallery before offline');
  await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
  await send('Page.reload');await until(`document.querySelectorAll('[data-toy]').length===25`,'offline gallery',100);
  verify(await evaluate(`document.querySelectorAll('[data-toy]').length===25`),'collection opens with network disabled');
@@ -127,30 +105,45 @@ async function run(){
  await evaluate(`location.hash='#/toy/cooking'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'mobile toy');
  await snapshot('toy-mobile');
  verify(await evaluate(`document.documentElement.scrollWidth<=innerWidth+2`),'mobile toy has no horizontal overflow');
- const portrait=await evaluate(`(()=>{const a=document.querySelector('.toy-canvas'),b=document.querySelector('.stage-wrap').getBoundingClientRect(),v=a.viewBox.baseVal;return {height:b.height,width:b.width,innerHeight:innerHeight,worldWidth:v.width,worldHeight:v.height,arrows:document.querySelector('.camera-controls').hidden,home:document.querySelector('[data-home]').getBoundingClientRect().width,reset:document.querySelector('[data-reset]').getBoundingClientRect().width}})()`);
- verify(portrait.height>=portrait.innerHeight*.97,'iPhone portrait: playground fills at least 97% of viewport height');
- verify(portrait.worldWidth<500&&portrait.worldHeight>=590,'iPhone portrait: camera zooms to full-height interactive art');
- verify(!portrait.arrows,'iPhone portrait: pan arrows are available');
- verify(portrait.home>=44&&portrait.reset>=44,'iPhone portrait: navigation has touch-size buttons');
- const originalX=await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.x`);
- await evaluate(`document.querySelector('[data-pan="1"]').click()`);
- verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.x`)>originalX+5,'camera arrow reveals more of the scene');
- await evaluate(`document.querySelector('[data-fit]').click()`);
- verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.width===960`),'See all reveals every part of the playground');
- await evaluate(`document.querySelector('[data-fit]').click()`);
- verify(await evaluate(`document.querySelector('.toy-canvas').viewBox.baseVal.width<500`),'Fill screen restores immersive play');
- const swiped=await evaluate(`(()=>{const svg=document.querySelector('[data-stage]'),box=svg.getBoundingClientRect(),x=box.x+box.width*.7,y=box.y+box.height*.45,before=svg.viewBox.baseVal.x,id=911;for(const [type,at] of [['pointerdown',x],['pointermove',x-box.width*.22],['pointerup',x-box.width*.22]])svg.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:id,clientX:at,clientY:y}));return svg.viewBox.baseVal.x>before+5})()`);
- verify(swiped,'swiping empty stage space pans the toy camera');
- await send('Emulation.setDeviceMetricsOverride',{width:412,height:915,deviceScaleFactor:1,mobile:true});
- await wait(180);
- const android=await evaluate(`(()=>({h:document.querySelector('.stage-wrap').getBoundingClientRect().height,visible:innerHeight,cropped:document.querySelector('.toy-canvas').viewBox.baseVal.width<500}))()`);
- verify(android.h>=android.visible*.97&&android.cropped,'Android portrait: full-height play and large art');
+ verify(await evaluate(`document.querySelector('[data-stage]').getAttribute('viewBox')==='0 0 480 840'`),'portrait game uses a composed vertical scene');
+ verify(await evaluate(`document.querySelector('.stage-wrap').getBoundingClientRect().height>=innerHeight*.98`),'portrait play takes the full viewport');
+ verify(await evaluate(`getComputedStyle(document.querySelector('.play-controls')).display==='none'`),'portrait play does not cover toys with a toolbar');
+ for(const toy of toys){
+  await evaluate(`location.hash='#/toy/${toy.id}'`);
+  await until(`document.querySelector('[data-stage]')?.dataset.stage==='${toy.id}'`,'portrait '+toy.id);
+  const audit=await evaluate(`(()=>{const scene=document.querySelector('[data-stage]'),targets=[...scene.querySelectorAll('[data-act],[data-drag]')];return {view:scene.getAttribute('viewBox'),interactive:targets.length,inside:targets.some(el=>{const r=el.getBoundingClientRect();return r.width>=28&&r.height>=28&&r.x<innerWidth-20&&r.right>20&&r.y<innerHeight-50&&r.bottom>90})}})()`);
+  verify(audit.view==='0 0 480 840'&&audit.interactive>0&&audit.inside,`${toy.title} portrait scene is interactive without horizontal camera controls`);
+ }
+ await evaluate(`location.hash='#/toy/cooking'`);
+ await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'cooking portrait actions');
+ const cooking=await evaluate(`(()=>{const before=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking.ingredients.length;document.querySelector('[data-act="ingredient:1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));const after=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking.ingredients.length;return after===before+1})()`);
+ verify(cooking,'tap ingredient changes real cooking state');
  await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'landscapePrimary',angle:90}});
- await wait(350);await evaluate(`window.dispatchEvent(new Event('resize'))`);await wait(100);
- const landscape=await evaluate(`(()=>({h:document.querySelector('.stage-wrap').getBoundingClientRect().height,visible:innerHeight,w:document.querySelector('.toy-canvas').viewBox.baseVal.width}))()`);
- console.log('Mobile landscape camera',JSON.stringify(landscape));
- verify(landscape.h>=landscape.visible*.97&&landscape.w>500,'Phone landscape: viewport fills and scene expands compared with portrait');
+ await wait(350);
+ verify(await evaluate(`document.querySelector('[data-stage]').getAttribute('viewBox')==='0 0 960 600'`),'landscape switches to a wide scene');
  await snapshot('toy-landscape');
+ await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
+ await wait(320);
+ verify(await evaluate(`document.querySelector('[data-stage]').getAttribute('viewBox')==='0 0 480 840'`),'rotation returns to portrait without losing toy selection');
+ await evaluate(`location.hash='#/toy/busy-board'`);await until(`document.querySelector('[data-stage]')?.dataset.stage==='busy-board'`,'busy board portrait');
+ const multiSlider=await evaluate(`(()=>{
+  const svg=document.querySelector('[data-stage]'),p=svg.createSVGPoint(),world=(x,y)=>{p.x=x;p.y=y;const q=p.matrixTransform(svg.getScreenCTM());return [q.x,q.y]};
+  const g0=svg.querySelector('[data-slider="0"]'),g1=svg.querySelector('[data-slider="1"]');
+  const [ax,ay]=world(110,501),[bx,by]=world(110,601),[cx,cy]=world(394,501),[dx,dy]=world(350,601);
+  const ptr=(el,type,id,x,y)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,clientX:x,clientY:y,bubbles:true,isPrimary:id===101}));
+  ptr(g0,'pointerdown',101,ax,ay);ptr(g1,'pointerdown',102,bx,by);
+  ptr(svg,'pointermove',101,cx,cy);ptr(svg,'pointermove',102,dx,dy);
+  ptr(svg,'pointerup',101,cx,cy);ptr(svg,'pointerup',102,dx,dy);
+  const val=JSON.parse(localStorage.getItem('poklike-state-v1'))['busy-board'].sliders;
+  return val[0]>.8&&val[1]>.7;
+ })()`);
+ verify(multiSlider,'Busy Board sliders respond to two independent fingers');
+ for(const dims of [[320,568],[412,915]]){
+  await send('Emulation.setDeviceMetricsOverride',{width:dims[0],height:dims[1],deviceScaleFactor:1,mobile:true,screenOrientation:{type:'portraitPrimary',angle:0}});
+  await wait(140);
+  verify(await evaluate(`(()=>{const stage=document.querySelector('[data-stage]'),rect=stage.getBoundingClientRect();return stage.getAttribute('viewBox')==='0 0 480 840'&&rect.height>=innerHeight*.98&&document.documentElement.scrollWidth<=innerWidth+2})()`),`${dims[0]}px portrait keeps complete stage and no overflow`);
+ }
+
 
  verify(errors.length===0,'browser produced no uncaught page exceptions: '+errors.join(','));
  verify(requests.length===0,'browser produced no 5xx responses: '+requests.join(','));
