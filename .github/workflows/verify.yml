@@ -26,6 +26,10 @@ jobs:
           echo "CHROMIUM=$BROWSER" >> "$GITHUB_ENV"
       - name: Run offline Chromium browser tests
         run: npm run test:browser
+      - name: Verify offline browser at GitHub Pages subpath
+        env:
+          POKLIKE_BASE_PATH: /poklike/
+        run: npm run test:browser
       - name: Save screenshots and test artifacts
         if: always()
         uses: actions/upload-artifact@v4
