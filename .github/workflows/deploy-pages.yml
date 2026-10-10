@@ -26,7 +26,7 @@ jobs:
       - name: Package static offline app
         run: |
           mkdir -p _site/icons
-          cp index.html styles.css app.js toys.js portrait-toys.js sw.js manifest.webmanifest _site/
+          cp index.html styles.css app.js toys.js portrait-toys.js wide-toys.js sw.js manifest.webmanifest _site/
           cp icons/poklike.svg icons/poklike-180.png icons/poklike-192.png icons/poklike-512.png _site/icons/
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
@@ -43,7 +43,7 @@ jobs:
           set -euo pipefail
           site="${SITE_URL%/}"
           test -n "$site"
-          for path in index.html styles.css app.js toys.js portrait-toys.js sw.js manifest.webmanifest icons/poklike.svg icons/poklike-180.png icons/poklike-192.png icons/poklike-512.png; do
+          for path in index.html styles.css app.js toys.js portrait-toys.js wide-toys.js sw.js manifest.webmanifest icons/poklike.svg icons/poklike-180.png icons/poklike-192.png icons/poklike-512.png; do
             echo "Checking public asset: $path"
             response="$(mktemp)"
             matched=0
