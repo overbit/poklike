@@ -18,6 +18,14 @@ The game is **one installable PWA** for Android, iPhone and desktop; there are n
 
 This is an original interactive interpretation rather than a verified frame-perfect replica. In particular, the commercial toys contain deeper systems, artwork and sounds than these interpretations. See [replica/recon.md](replica/recon.md) and [replica/features.csv](replica/features.csv) for source evidence and unverified details. The two provided YouTube URLs could not be fetched here, so their specific contents are not claimed to have been reviewed.
 
+## Local recommendations and deeper play
+
+Grown-ups can optionally choose an age range and interests to show four toy suggestions. All 25 toys remain available in their original order. Choices stay in this browser and in backups you export; no child name, birthday, account or remote service is needed. Clear recommendations separately from saved creations. Per-toy **Start fresh** still resets immediately; whole-playroom erase requires the grown-up gate and typing CLEAR.
+
+Cooking includes pot, blender and oven choices, chopping and visible preparation states. Geometry supports adding, selecting, turning, coloring, arranging and removing pieces. Pawn Maker offers distinct body, eye, skin, outfit and hat options. These are independently designed web mechanics, not recovered Android gameplay sequences.
+
+Static inspection of the supplied Android 49.5.1 package is documented in [the Android evidence matrix](replica/android-49.5.1-evidence.md), including artifact hashes, REA references and unresolved feature gaps. Full feature parity has **not** been established; original spoken phonics, detailed factory routing, marble behavior and many scene interactions remain outside the verified scope.
+
 ## Develop and test
 
 Requires Node.js 20+ and Python 3 for the static server. Chromium is needed for end-to-end tests.
@@ -26,6 +34,7 @@ Requires Node.js 20+ and Python 3 for the static server. Chromium is needed for 
 npm run serve
 npm test
 npm run test:browser
+npm run test:flows
 ```
 
 There are no runtime package dependencies or CDN requests. The project has no Android/iOS native targets; the **installed web app** is the phone and tablet delivery format. A GitHub Actions verification workflow checks all 25 toys online and offline, their responsive portrait layouts, and touch interaction. The Pages workflow publishes the verified static assets from `main` (its own HTTPS asset check runs after deployment).
