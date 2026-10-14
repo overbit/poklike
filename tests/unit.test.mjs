@@ -206,3 +206,60 @@ test('portrait aspect mapping preserves circles, touch areas and full 25-toy wor
   }
  }
 });
+
+// Independent local mechanics: metadata suggested capabilities, not recovered rules.
+const composedArt=(id,s)=>[renderPortraitToy(id,s).art,(renderWideToy(id,s)||renderToy(id,s)).art];
+function visiblyChanges(id,state,action){const before=composedArt(id,state);interact(id,state,action);const after=composedArt(id,state);for(let i=0;i<2;i++)assert.notEqual(after[i],before[i],`${id} ${action} must change ${i?'wide':'portrait'} artwork`);}
+test('formerly silent shape, weather and eye controls visibly change their scene',()=>{
+ for(const [id,action]of [['shapes','form'],['dinosaurs','weather'],['pawn-maker','eyes']])visiblyChanges(id,initialState(id),action);
+});
+test('Cooking offers three distinct appliances and preparation in both layouts',()=>{
+ const s=initialState('cooking');interact('cooking',s,'scene');
+ for(const appliance of [0,1,2]){
+  interact('cooking',s,'appliance:'+appliance);interact('cooking',s,'ingredient:1');
+  visiblyChanges('cooking',s,'prepare');assert.equal(s.prepared,true);
+  visiblyChanges('cooking',s,'process');assert.equal(appliance===1?s.mixed:s.cooked,appliance!==0);
+  if(appliance===0){visiblyChanges('cooking',s,'heat');assert.equal(s.cooked,true);}
+  for(const art of composedArt('cooking',s)){assert.match(art,/data-act="prepare"/);assert.match(art,/data-act="appliance:2"/);assert.match(art,/data-act="process"/);}
+  visiblyChanges('cooking',s,'fresh');assert.equal(s.ingredients.length,0);assert.equal(s.cooked,false);assert.equal(s.mixed,false);
+ }
+});
+test('Cooking serves a visible meal effect and bounds ingredients',()=>{
+ const s=initialState('cooking');for(let i=0;i<40;i++)interact('cooking',s,'ingredient:0');assert.equal(s.ingredients.length,24);
+ visiblyChanges('cooking',s,'serve');assert.equal(s.served,1);assert.equal(s.ingredients.length,0);
+ for(const art of composedArt('cooking',s))assert.match(art,/happy guest/);
+});
+test('Geometry selected piece keeps its color and rotation when dragged',()=>{
+ const s=initialState('geometry');visiblyChanges('geometry',s,'select:1');visiblyChanges('geometry',s,'rotate');visiblyChanges('geometry',s,'paint');
+ assert.equal(s.pieces[1].r,45);assert.equal(s.pieces[1].c,2);assert.equal(s.pieces[0].r,0);
+ moveDrag('geometry',s,'piece:1',650,320);assert.deepEqual(s.pieces[1],{x:650,y:320,r:45,c:2});assert.equal(s.selected,1);
+ visiblyChanges('geometry',s,'preset');visiblyChanges('geometry',s,'randomize');visiblyChanges('geometry',s,'discard');assert.equal(s.pieces.length,4);
+ visiblyChanges('geometry',s,'add');assert.equal(s.selected,4);
+ for(let i=0;i<30;i++)interact('geometry',s,'add');assert.equal(s.pieces.length,12);
+ for(let i=0;i<20;i++)interact('geometry',s,'discard');assert.equal(s.pieces.length,0);assert.doesNotThrow(()=>interact('geometry',s,'rotate'));visiblyChanges('geometry',s,'add');
+});
+test('Pawn Maker skin, silhouette, eyes, hats and colors are distinct in both layouts',()=>{
+ const s=initialState('pawn-maker');for(const action of ['face','body','eyes','head','outfit']){
+  visiblyChanges('pawn-maker',s,action);
+  for(const art of composedArt('pawn-maker',s))assert.match(art,new RegExp(`data-act="${action}"`));
+ }
+ const saved=JSON.parse(JSON.stringify(s));assert.deepEqual(composedArt('pawn-maker',saved),composedArt('pawn-maker',s));
+});
+test('Drawing wide composition has its own palette and never seeds saved strokes',()=>{
+ const s=initialState('drawing');const art=renderWideToy('drawing',s).art;
+ assert.equal(s.strokes.length,0);assert.equal((art.match(/data-act="color:/g)||[]).length,6);assert.match(art,/width="76" height="76"/);
+ assert.ok(richWideIds.has('drawing'));visiblyChanges('drawing',s,'color:1');visiblyChanges('drawing',s,'size');
+});
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const appSource=readFileSync(new URL('../app.js',import.meta.url),'utf8');
+const sandbox={initialState};vm.createContext(sandbox);
+vm.runInContext(appSource.slice(appSource.indexOf('const boundedNumber='),appSource.indexOf('for(const id of ids)states[id]='))+';globalThis.sanitize=sanitized;',sandbox);
+test('save sanitizer preserves bounded new model fields and accepts old saves',()=>{
+ const geometry=sandbox.sanitize('geometry',{pieces:[{x:400,y:300,c:4,r:135}],selected:0});assert.equal(geometry.pieces[0].r,135);assert.equal(geometry.pieces[0].c,4);
+ const old=sandbox.sanitize('cooking',{ingredients:[1],heat:true});assert.equal(old.appliance,0);assert.equal(old.mixed,false);
+ const cooked=sandbox.sanitize('cooking',{appliance:2,prepared:true,cooked:true,mixed:false,ingredients:Array(50).fill(2)});assert.equal(cooked.appliance,2);assert.equal(cooked.cooked,true);assert.equal(cooked.ingredients.length,24);
+ const pawn=sandbox.sanitize('pawn-maker',{eyes:2,head:2,outfit:5});assert.equal(pawn.eyes,2);assert.equal(pawn.outfit,5);
+ const bad=sandbox.sanitize('geometry',{pieces:Array(30).fill({x:Infinity,y:NaN,c:999,r:-30}),selected:Infinity});assert.equal(bad.pieces.length,12);for(const p of bad.pieces)assert.ok(Object.values(p).every(Number.isFinite));
+ for(const id of ['geometry','pawn-maker','cooking'])for(const input of [null,[],{appliance:Infinity,eyes:-900,head:NaN}])for(const art of composedArt(id,sandbox.sanitize(id,input)))assert.ok(!art.includes('NaN'));
+});
