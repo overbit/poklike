@@ -4,6 +4,6 @@
   "private":true,
   "type":"module",
   "description":"25 original, offline-first interactive toys",
-  "scripts":{"serve":"python3 -m http.server 8000","test":"node --test tests/unit.test.mjs tests/profile.test.mjs","test:browser":"node tests/browser.mjs","test:flows":"node tests/flows-browser.mjs"},
+  "scripts":{"serve":"python3 -m http.server 8000","test":"node --test tests/unit.test.mjs tests/profile.test.mjs tests/deployment.test.mjs","test:browser":"node tests/browser.mjs","test:flows":"node tests/flows-browser.mjs"},
   "engines":{"node":">=20"}
 }
