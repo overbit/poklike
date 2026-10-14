@@ -75,12 +75,12 @@ export function initialState(id){
   case 'dinosaurs':return {...base,weather:0,egg:0,dino:{x:340,y:370}};
   case 'connect-the-dots':return {...base,connected:0,shape:0};
   case 'shops':return {...base,shop:0,basket:[]};
-  case 'geometry':return {...base,pieces:[{x:220,y:250},{x:380,y:280},{x:560,y:240},{x:700,y:330},{x:300,y:420}]};
+  case 'geometry':return {...base,preset:0,pieces:[{x:220,y:250,c:0,r:0},{x:380,y:280,c:1,r:0},{x:560,y:240,c:2,r:0},{x:700,y:330,c:3,r:0},{x:300,y:420,c:4,r:0}]};
   case 'space':return {...base,planet:0,rocket:{x:330,y:340},stars:0};
   case 'number-journey':return {...base,number:3,kind:0};
   case 'phonics':return {...base,word:0,letter:0,placed:[false,false,false]};
-  case 'pawn-maker':return {...base,face:0,body:0,eyes:0,head:0};
-  case 'cooking':return {...base,ingredients:[],heat:false,stir:0,guest:0,craving:0,served:0,rejected:0,water:false,cupboards:[false,false,false]};
+  case 'pawn-maker':return {...base,face:0,body:0,eyes:0,head:0,outfit:0};
+  case 'cooking':return {...base,ingredients:[],appliance:0,prepared:false,cooked:false,mixed:false,heat:false,stir:0,guest:0,craving:0,served:0,rejected:0,water:false,cupboards:[false,false,false]};
   case 'code-factory':return {...base,commands:[1,1,2,1,0,1],robot:0,playing:true,crates:0,goods:0,mess:0};
   default:return base;
  }
@@ -422,7 +422,13 @@ export function interact(id,s,action){
   break;
  case 'geometry':
   if(a==='randomize')s.pieces.forEach((p,i)=>{p.x=175+(i*151+s.turn*55)%610;p.y=180+(i*71)%270;});
-  if(a==='rotate')s.color=(s.color+1)%6;
+  if(a==='select'&&s.pieces[n])s.selected=n;
+   if(a==='add'&&s.pieces.length<12){s.pieces.push({x:240+(s.pieces.length%4)*145,y:230,c:s.pieces.length%6,r:0});s.selected=s.pieces.length-1;}
+   const piece=s.pieces[s.selected];
+   if(a==='rotate'&&piece)piece.r=((piece.r||0)+45)%360;
+   if(a==='paint'&&piece)piece.c=((piece.c||0)+1)%6;
+   if(a==='discard'&&piece){s.pieces.splice(s.selected,1);s.selected=Math.max(0,Math.min(s.selected,s.pieces.length-1));}
+   if(a==='preset'){s.preset=(s.preset+1)%3;s.pieces.forEach((p,i)=>{p.x=s.preset===1?280+(i%3)*150:s.preset===2?480+Math.cos(i*1.05)*180:175+(i%5)*140;p.y=s.preset===1?210+Math.floor(i/3)*100:s.preset===2?280+Math.sin(i*1.05)*130:250+Math.floor(i/5)*110;});}
   break;
  case 'space':
   if(a==='planet')s.planet=(s.planet+1)%4;
@@ -439,7 +445,7 @@ export function interact(id,s,action){
   if(a==='sound')s.letter=(s.letter+1)%3;
   break;
  case 'pawn-maker':
-  if(['face','body','eyes','head'].includes(a))s[a]=(s[a]+1)%(['face'].includes(a)?4:3);
+  if(['face','body','eyes','head','outfit'].includes(a))s[a]=(s[a]+1)%(a==='face'?4:a==='outfit'?6:3);
   break;
  case 'cooking':
   if(a==='scene')s.mode=(s.mode+1)%2;
@@ -449,11 +455,13 @@ export function interact(id,s,action){
    else s.rejected++;
   }
   if(a==='cupboard'&&Number.isInteger(n)&&n>=0&&n<s.cupboards.length)s.cupboards[n]=!s.cupboards[n];
-  if(a==='ingredient'&&s.ingredients.length<35)s.ingredients.push(n);
+  if(a==='ingredient'&&Number.isInteger(n)&&n>=0&&n<4&&s.ingredients.length<24){s.ingredients.push(n);s.cooked=false;s.mixed=false;s.prepared=false;}
+   if(a==='appliance'&&Number.isInteger(n)&&n>=0&&n<3){s.appliance=n;s.heat=false;}
+   if(a==='prepare'&&s.ingredients.length)s.prepared=!s.prepared;
   if(a==='water')s.water=!s.water;
-  if(a==='heat')s.heat=!s.heat;
-  if(a==='stir')s.stir++;
-  if(a==='fresh'){s.ingredients=[];s.heat=false;s.water=false;}
+  if(a==='heat'){s.heat=!s.heat;if(s.heat&&s.ingredients.length)s.cooked=true;}
+  if(a==='stir'||a==='process'){s.stir=(s.stir+1)%12;if(s.ingredients.length){if(s.appliance===1)s.mixed=true;else if(s.heat||s.appliance===2)s.cooked=true;}}
+  if(a==='fresh'){s.ingredients=[];s.heat=false;s.water=false;s.prepared=false;s.cooked=false;s.mixed=false;}
   break;
  case 'code-factory':
   if((a==='command'||a==='director')&&Number.isInteger(n)&&n>=0&&n<s.commands.length)s.commands[n]=(s.commands[n]+1)%4;
@@ -491,7 +499,7 @@ export function moveDrag(id,s,key,x,y,layout='wide'){
   s.tiles[n]={x,y};return true;
  }
  if(id==='dinosaurs'&&type==='dino'){s.dino={x,y};return true;}
- if(id==='geometry'&&type==='piece'&&s.pieces[n]){s.pieces[n]={x,y};return true;}
+ if(id==='geometry'&&type==='piece'&&s.pieces[n]){s.selected=n;s.pieces[n]={...s.pieces[n],x,y:Math.min(y,layout==='portrait'?347:365)};return true;}
  if(id==='space'&&type==='rocket'){s.rocket={x,y};return true;}
  return false;
 }

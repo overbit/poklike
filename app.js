@@ -1,13 +1,15 @@
 import {toys,ids,toyById,initialState,renderToy,interact,moveDrag,tickToy,C} from './toys.js';
 import {renderPortraitToy,toModel,toPortrait,portraitDragToModel,PORTRAIT_DRAG_LIFT} from './portrait-toys.js';
 import {renderWideToy,richWideIds} from './wide-toys.js';
+import {AGE_BANDS,INTERESTS,normalizeProfile,recommendedToyIds} from './profile.js';
 
-const KEY='poklike-state-v1', PREF='poklike-prefs-v1';
+const KEY='poklike-state-v1', PREF='poklike-prefs-v1', PROFILE='poklike-profile-v1';
 const app=document.querySelector('#app');
 const icon=(kind)=>({back:'<path d="M19 12H5m0 0 7-7m-7 7 7 7"/>',reset:'<path d="M4 11a8 8 0 1 1 2 6m-2 2v-7h7"/>',adult:'<path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2"/>',sound:'<path d="M4 9v6h4l5 4V5L8 9H4Zm12 0a4 4 0 0 1 0 6"/>'}[kind]||'');
 const svgIcon=kind=>`<svg viewBox="0 0 24 24" role="img" aria-hidden="true">${icon(kind)}</svg>`;
 const escapeHtml=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const savedRead=key=>{try{return JSON.parse(localStorage.getItem(key)||'null');}catch{return null;}};
+let profile=normalizeProfile(savedRead(PROFILE));
 const states=Object.create(null);
 const savedStates=savedRead(KEY);
 const preferences={sound:true,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,...(savedRead(PREF)||{})};
@@ -23,6 +25,7 @@ function sanitized(id,input){
  const template=initialState(id),s={...template};
  if(!input||typeof input!=='object'||Array.isArray(input))return s;
  for(const [key,fallback]of Object.entries(template)){
+  if(!Object.hasOwn(input,key))continue;
   const val=input[key];
   if(typeof fallback==='number')s[key]=boundedNumber(val,fallback,key==='number'?1:0,key==='number'?12:10000);
   else if(typeof fallback==='boolean')s[key]=typeof val==='boolean'?val:fallback;
@@ -31,11 +34,12 @@ function sanitized(id,input){
    if(!Array.isArray(val))continue;
    if(key==='strokes')s.strokes=val.slice(-150).map(line=>({c:boundedNumber(line?.c,0,0,5),w:boundedNumber(line?.w,9,1,40),points:Array.isArray(line?.points)?line.points.slice(0,1500).filter(p=>Array.isArray(p)&&p.length===2).map(p=>[boundedNumber(p[0],0,0,960),boundedNumber(p[1],0,0,600)]):[]}));
    else if(key==='basket'||key==='touched')s[key]=val.slice(-35).filter(x=>typeof x==='string').map(x=>x.replace(/[^0-9:]/g,'').slice(0,12));
-   else if(key==='ingredients')s[key]=val.slice(-35).map(x=>boundedNumber(x,0,0,4));
+   else if(key==='ingredients')s[key]=val.slice(-24).map(x=>Math.floor(boundedNumber(x,0,0,3)));
    else if(key==='steps')s.steps=template.steps.map((row,i)=>row.map((v,j)=>val[i]?.[j]===true));
    else if(key==='switches'||key==='valves'||key==='cupboards'||key==='placed')s[key]=fallback.map((v,i)=>typeof val[i]==='boolean'?val[i]:v);
    else if(key==='commands'||key==='sliders'||key==='dials')s[key]=fallback.map((v,i)=>boundedNumber(val[i],v,0,key==='sliders'?1:5));
-   else s[key]=val.slice(0,key==='blocks'?18:12).map((item,i)=>{
+   else if(key==='pieces')s.pieces=val.slice(0,12).map((item,i)=>({x:boundedNumber(item?.x,220,60,885),y:boundedNumber(item?.y,250,85,440),c:Math.floor(boundedNumber(item?.c,i%6,0,5)),r:Math.floor(boundedNumber(item?.r,0,0,359))}));
+    else s[key]=val.slice(0,key==='blocks'?18:12).map((item,i)=>{
     if(!item||typeof item!=='object')return fallback[i]||{x:480,y:300};
     return Object.fromEntries(Object.entries(item).filter(([k,v])=>['x','y','c'].includes(k)).map(([k,v])=>[k,boundedNumber(v,0,0,k==='x'?960:k==='y'?600:5)]));
    });
@@ -43,15 +47,18 @@ function sanitized(id,input){
   else if(fallback&&typeof fallback==='object')s[key]={x:boundedNumber(val?.x,fallback.x,0,960),y:boundedNumber(val?.y,fallback.y,0,600)};
  }
  if(id==='code-factory'&&input.crates===undefined)s.playing=true;
+ const limits={appliance:3,face:4,body:3,eyes:3,head:3,outfit:6,preset:3,form:5,weather:2,stir:12};
+ for(const [key,max]of Object.entries(limits))if(Object.hasOwn(s,key))s[key]=Math.floor(Math.max(0,s[key]))%max;
+ if(id==='geometry')s.selected=Math.max(0,Math.min(s.pieces.length-1,Math.floor(s.selected)));
  return s;
 }
-for(const id of ids)states[id]=sanitized(id,savedStates?.[id]);
+for(const id of ids)states[id]=sanitized(id,savedStates&&Object.hasOwn(savedStates,id)?savedStates[id]:null);
 function loadState(id){
  if(!states[id])states[id]=initialState(id);
  return states[id];
 }
 function save(){
- try{localStorage.setItem(KEY,JSON.stringify(states));localStorage.setItem(PREF,JSON.stringify(preferences));return true;}
+ try{localStorage.setItem(KEY,JSON.stringify(states));localStorage.setItem(PREF,JSON.stringify(preferences));localStorage.setItem(PROFILE,JSON.stringify(profile));return true;}
  catch(error){console.warn('Local save unavailable:',error);return false;}
 }
 function setMotion(){document.body.dataset.reduced=String(preferences.reducedMotion);}
@@ -74,12 +81,17 @@ function previewArt(id){
  }
  return (renderWideToy(id,state)||renderToy(id,state)).art;
 }
+function recommendationShelf(){
+ const picks=recommendedToyIds(toys,profile);
+ if(!picks.length)return '';
+ return `<section class="recommendations" aria-labelledby="recommendations-title"><h2 id="recommendations-title">A few ideas for today</h2><p>Chosen from the themes your grown-up picked. Every toy is still here to explore.</p><div class="recommendation-list">${picks.map(id=>{const toy=toyById(id);return `<a href="#/toy/${id}" data-recommendation="${id}"><span aria-hidden="true"><svg viewBox="0 0 960 600">${previewArt(id)}</svg></span><strong>${escapeHtml(toy.title)}</strong></a>`;}).join('')}</div></section>`;
+}
 function gallery(){
  currentToy=null;gestures.clear();document.body.classList.remove('playing');document.title='Poklike — A little world of play';
  app.innerHTML=`<main class="shell">
  <header class="topbar"><a class="brand" href="#/" aria-label="Poklike home">${brand()}</a><div class="toolbar-actions">${status()}<button class="icon-button" data-adult aria-label="Grown-ups area">${svgIcon('adult')}</button></div></header>
  <section class="hero" aria-label="Welcome"><div class="hero-copy"><h1>Little worlds,<br><em>big wonder.</em></h1><p>A cozy collection of tiny adventures. Make music, build anything, draw a new world and follow your curiosity. There's no right way to play.</p></div><div class="hero-display" aria-hidden="true"><div class="disk"></div><div class="cone"></div><div class="block"></div><div class="dot"></div></div></section>
- <section aria-labelledby="collection-title"><div class="collection-heading"><h2 id="collection-title">Choose something to explore</h2><span>${toys.length} little adventures</span></div>
+ ${recommendationShelf()}<section aria-labelledby="collection-title"><div class="collection-heading"><h2 id="collection-title">Choose something to explore</h2><span>${toys.length} little adventures</span></div>
  <div class="toys-grid">${toys.map((toy,i)=>{
   const art=previewArt(toy.id);
   return `<button class="toy-card ${i===0?'featured':''}" style="--accent:${toy.color}" data-toy="${toy.id}" aria-label="Play ${escapeHtml(toy.title)}">
@@ -131,10 +143,17 @@ function showToy(id){
  stage.addEventListener('pointercancel',pointerUp);
  requestAnimationFrame(responsiveStage);
 }
+function replaceKeepingFocus(container,html){
+ const active=document.activeElement,keys=['data-slider','data-drag','data-act'];
+ const key=container.contains(active)?keys.find(k=>active.hasAttribute(k)):null;
+ const value=key?active.getAttribute(key):null;
+ container.innerHTML=html;
+ if(key){const replacement=[...container.querySelectorAll(`[${key}]`)].find(el=>el.getAttribute(key)===value);replacement?.focus({preventScroll:true});}
+}
 function updateStage(){
  if(!currentToy||gestures.size)return;
  const stage=app.querySelector('[data-stage]');
- if(stage)stage.innerHTML=buildScene(currentToy).art;
+ if(stage)replaceKeepingFocus(stage,buildScene(currentToy).art);
 }
 function handleAction(action){
  if(!currentToy)return;
@@ -146,7 +165,7 @@ function handleAction(action){
  save();updateStage();
  const scene=renderToy(currentToy,st);
  const controls=app.querySelector('.play-controls');
- if(controls)controls.innerHTML=scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join('');
+ if(controls)replaceKeepingFocus(controls,scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join(''));
 }
 function point(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
@@ -160,6 +179,7 @@ function pointerDown(ev){
  const portrait=isPortraitPlay();
  const movable=target?.closest('[data-drag]');
  if(movable){
+  if(currentToy==='geometry')loadState('geometry').selected=Number(movable.dataset.drag.split(':')[1]);
   if(currentToy==='musical-blobs'&&preferences.sound){
    const index=Number(movable.dataset.drag?.split(':')[1]||0);
    const notes=[262,294,330,392,440];
@@ -183,15 +203,15 @@ function pointerDown(ev){
   ev.preventDefault();return;
  }
  if(currentToy==='drawing'&&!target?.closest('[data-act]')){
-  const inBounds=portrait?at.x>22&&at.x<457&&at.y>177&&at.y<710:at.y<478&&at.y>35&&at.x>60&&at.x<900;
+  const inBounds=portrait?at.x>22&&at.x<457&&at.y>177&&at.y<710:at.y<424&&at.y>78&&at.x>92&&at.x<868;
   if(!inBounds)return;
-  const st=loadState('drawing'),model=portrait?toModel(at):at;
+  const st=loadState('drawing'),model=portrait?toModel(at):{x:(at.x-92)*960/776,y:(at.y-78)*600/346};
   if(st.strokes.length>=150)st.strokes.shift();
   const line={c:st.color,w:st.width,points:[[model.x,model.y]]};st.strokes.push(line);
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
   path.setAttribute('fill','none');path.setAttribute('stroke',([C.coral,C.sun,C.teal,C.blue,C.plum,C.leaf])[st.color]);
   path.setAttribute('stroke-width',String(portrait?st.width*.7:st.width));
-  path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');(portrait?svg.querySelector('[data-world]'):svg).appendChild(path);
+  path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');(portrait?svg.querySelector('[data-world]'):svg.querySelector('[data-ink]')).appendChild(path);
   gestures.set(ev.pointerId,{kind:'draw',line,path,portrait});
   try{svg.setPointerCapture(ev.pointerId);}catch{}ev.preventDefault();
  }
@@ -210,14 +230,14 @@ function pointerMove(ev){
  const svg=ev.currentTarget,at=point(ev,svg);
  if(d.kind==='slider')setSlider(d.index,at.x,d.element);
  else if(d.kind==='draw'){
-  const inBounds=d.portrait?at.x>22&&at.x<457&&at.y>177&&at.y<710:at.x>=60&&at.x<=900&&at.y>=35&&at.y<=478;
+  const inBounds=d.portrait?at.x>22&&at.x<457&&at.y>177&&at.y<710:at.x>=92&&at.x<=868&&at.y>=78&&at.y<=424;
   if(inBounds&&d.line.points.length<1500){
-   const m=d.portrait?toModel(at):at;d.line.points.push([m.x,m.y]);
+   const m=d.portrait?toModel(at):{x:(at.x-92)*960/776,y:(at.y-78)*600/346};d.line.points.push([m.x,m.y]);
    d.path.setAttribute('d',d.line.points.map((p,i)=>{const pos=d.portrait?toPortrait({x:p[0],y:p[1]}):{x:p[0],y:p[1]};return `${i?'L':'M'}${pos.x} ${pos.y}`;}).join(' '));
   }
  }else if(d.kind==='move'){
   const lift=d.portrait?(PORTRAIT_DRAG_LIFT[currentToy]||0):0;
-  const range=d.portrait?{left:48,right:432,top:Math.max(145,119+lift),bottom:725}:{left:60,right:885,top:85,bottom:520};
+  const range=d.portrait?{left:48,right:432,top:Math.max(145,119+lift),bottom:currentToy==='geometry'?590:725}:{left:60,right:885,top:85,bottom:currentToy==='geometry'?365:520};
   d.x=Math.max(range.left,Math.min(range.right,at.x+d.offset.x));
   d.y=Math.max(range.top,Math.min(range.bottom,at.y+d.offset.y));
   d.element.setAttribute('transform',`translate(${d.x} ${d.y})`);
@@ -265,7 +285,7 @@ function route(){
 function dialog(content){
  document.querySelector('#adult-dialog')?.remove();
  const modal=document.createElement('dialog');modal.id='adult-dialog';modal.innerHTML=`<div class="dialog-inner"><button class="dialog-close" data-close aria-label="Close dialog">×</button>${content}</div>`;
- document.body.appendChild(modal);modal.addEventListener('close',()=>modal.remove());modal.showModal();return modal;
+ document.body.appendChild(modal);modal.addEventListener('close',()=>modal.remove());modal.querySelector('[data-close]').addEventListener('click',()=>modal.close());modal.showModal();return modal;
 }
 function grownUps(){
  const a=9+Math.floor(Math.random()*8),b=6+Math.floor(Math.random()*9);
@@ -277,31 +297,45 @@ function settings(){
  const modal=dialog(`<h2>Grown-ups & settings</h2><p>Everything stays here on this device. No account, subscriptions or advertising.</p>
  <label class="setting-row"><span>Gentle sounds<small>Little synthesized notes, never streamed audio</small></span><input class="toggle" id="setting-sound" type="checkbox" ${preferences.sound?'checked':''}/></label>
  <label class="setting-row"><span>Reduce movement<small>Less passive animation</small></span><input class="toggle" id="setting-motion" type="checkbox" ${preferences.reducedMotion?'checked':''}/></label>
+ <fieldset class="profile-settings"><legend>Ideas for your playroom</legend><p>Optional recommendations use locally chosen themes, not the original app’s algorithm. No name or birthday is needed. These choices stay on this device and in backups you choose to save.</p><label class="setting-row"><span>Show a few toy ideas</span><input id="profile-enabled" type="checkbox" ${profile.enabled?'checked':''} /></label><label class="field">Age range<select id="profile-age">${AGE_BANDS.map(b=>`<option value="${b.id}" ${profile.ageBand===b.id?'selected':''}>${b.label}</option>`).join('')}</select></label><div class="interest-options">${INTERESTS.map(i=>`<label><input type="checkbox" data-interest="${i.id}" ${profile.interests.includes(i.id)?'checked':''} />${i.label}</label>`).join('')}</div><button class="secondary-button" id="clear-profile">Clear recommendations</button></fieldset>
  <div class="button-row"><button class="secondary-button" id="export-save">Save a backup</button><label class="secondary-button" for="import-save" role="button" tabindex="0">Restore a backup</label><input type="file" id="import-save" accept="application/json,.json" hidden /></div>
  <p class="notice">${escapeHtml(offline.message)}. ${offline.phase==='ready'?'After the initial download all 25 toys can reopen without a connection.':'Open over HTTPS or localhost, keep this page open until it reports offline readiness.'} Browser storage can be erased by the device or browser.</p>
- <div class="danger-zone"><strong>Start the whole playroom fresh</strong><label class="field">Type CLEAR to remove saved creations on this device<input id="clear-confirm" placeholder="CLEAR" autocomplete="off" /></label><button class="danger" id="clear-all" disabled>Erase saved play</button></div>
+ <div class="danger-zone"><strong>Start the whole playroom fresh</strong><label class="field">Type CLEAR to remove saved creations. Sound, movement and recommendations are kept<input id="clear-confirm" placeholder="CLEAR" autocomplete="off" /></label><button class="danger" id="clear-all" disabled>Erase saved play</button></div>
  <p class="dialog-error" id="settings-message" role="status"></p>`);
- modal.querySelector('#setting-sound').addEventListener('change',e=>{preferences.sound=e.target.checked;save();});
- modal.querySelector('#setting-motion').addEventListener('change',e=>{preferences.reducedMotion=e.target.checked;setMotion();save();});
+ const message=text=>{modal.querySelector('#settings-message').textContent=text;};
+ const persist=()=>{const ok=save();message(ok?'Saved on this device.':'Could not save on this device. Changes may be lost when you close the app.');return ok;};
+ const updateProfile=()=>{profile=normalizeProfile({enabled:modal.querySelector('#profile-enabled').checked,ageBand:modal.querySelector('#profile-age').value,interests:[...modal.querySelectorAll('[data-interest]:checked')].map(el=>el.dataset.interest)});persist();};
+ modal.querySelector('#profile-enabled').addEventListener('change',updateProfile);modal.querySelector('#profile-age').addEventListener('change',updateProfile);modal.querySelectorAll('[data-interest]').forEach(el=>el.addEventListener('change',updateProfile));
+ modal.querySelector('#clear-profile').addEventListener('click',()=>{profile=normalizeProfile(null);modal.querySelector('#profile-enabled').checked=false;modal.querySelector('#profile-age').value='any';modal.querySelectorAll('[data-interest]').forEach(el=>el.checked=false);persist();});
+ modal.addEventListener('close',()=>{if(!currentToy)gallery();});
+ modal.querySelector('#setting-sound').addEventListener('change',e=>{preferences.sound=e.target.checked;persist();});
+ modal.querySelector('#setting-motion').addEventListener('change',e=>{preferences.reducedMotion=e.target.checked;setMotion();persist();});
  modal.querySelector('#export-save').addEventListener('click',()=>{
-  const payload={format:'poklike-backup-1',saved:new Date().toISOString(),preferences,states};
+  const payload={format:'poklike-backup-1',saved:new Date().toISOString(),preferences,states,profile};
   const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));
   const link=document.createElement('a');link.href=url;link.download='poklike-playroom-backup.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
-  modal.querySelector('#settings-message').textContent='Backup downloaded to this device.';
+  modal.querySelector('#settings-message').textContent='Backup download requested. Keep the downloaded file somewhere safe.';
  });
  modal.querySelector('#import-save').addEventListener('change',async(e)=>{
   const file=e.target.files?.[0];if(!file)return;
   if(file.size>250000){modal.querySelector('#settings-message').textContent='This backup is too large.';return;}
   try{
-   const json=JSON.parse(await file.text());if(json.format!=='poklike-backup-1'||typeof json.states!=='object')throw new Error('Invalid backup');
-   for(const id of ids)if(id in json.states)states[id]=sanitized(id,json.states[id]);
-   preferences.sound=json.preferences?.sound!==false;preferences.reducedMotion=json.preferences?.reducedMotion===true;
-   setMotion();save();modal.querySelector('#settings-message').textContent='Backup restored. Reopen a toy to see its saved state.';
+   const json=JSON.parse(await file.text());
+   if(!json||json.format!=='poklike-backup-1'||!json.states||typeof json.states!=='object'||Array.isArray(json.states))throw new Error('Invalid backup');
+   const nextStates=Object.create(null);
+   for(const id of ids)if(Object.hasOwn(json.states,id))nextStates[id]=sanitized(id,json.states[id]);
+   const importedPreferences=json.preferences&&typeof json.preferences==='object'&&!Array.isArray(json.preferences)?json.preferences:{};
+   const nextPreferences={sound:!Object.hasOwn(importedPreferences,'sound')||importedPreferences.sound!==false,reducedMotion:Object.hasOwn(importedPreferences,'reducedMotion')&&importedPreferences.reducedMotion===true};
+   const nextProfile=Object.hasOwn(json,'profile')?normalizeProfile(json.profile):normalizeProfile(profile);
+   // All parsing and normalization completes before any live state changes.
+   Object.assign(states,nextStates);Object.assign(preferences,nextPreferences);profile=nextProfile;setMotion();
+   if(save())message('Backup restored on this device. Reopen a toy to see its saved state.');
+   else message('Backup opened, but could not be saved on this device. Keep a copy of your backup.');
   }catch{modal.querySelector('#settings-message').textContent='Could not read this backup. Please select a Poklike backup file.';}
  });
  const input=modal.querySelector('#clear-confirm'),clear=modal.querySelector('#clear-all');
  input.addEventListener('input',()=>{clear.disabled=input.value!=='CLEAR';});
- clear.addEventListener('click',()=>{for(const id of Object.keys(states))delete states[id];save();modal.querySelector('#settings-message').textContent='Saved play was erased on this device.';input.value='';clear.disabled=true;});
+ clear.addEventListener('click',()=>{for(const id of ids)states[id]=initialState(id);message(save()?'Saved creations were erased. Preferences and recommendations were kept.':'Creations cleared for now, but storage could not be updated. Previously saved play may return.');input.value='';clear.disabled=true;});
 }
 function verifyOffline(worker){return new Promise((resolve,reject)=>{
  const channel=new MessageChannel();const timeout=setTimeout(()=>reject(new Error('Timed out checking offline files')),12000);
@@ -346,6 +380,7 @@ document.addEventListener('keydown',ev=>{
  if(!drag&&currentToy==='busy-book'&&ev.target instanceof Element&&ev.target.closest('svg')&&['ArrowLeft','ArrowRight'].includes(ev.key)){
   ev.preventDefault();handleAction(ev.key==='ArrowRight'?'next':'prev');return;
  }
+ if(drag&&currentToy==='geometry'&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();handleAction('select:'+drag.dataset.drag.split(':')[1]);return;}
  if(drag&&currentToy&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(ev.key)){
   ev.preventDefault();
   const [x,y]=((drag.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]([\d.]+)\)/)||[]).slice(1).map(Number);
@@ -366,7 +401,7 @@ function responsiveStage(){
  stage.setAttribute('preserveAspectRatio','xMidYMid meet');
  stage.dataset.offsetX=String(scene.offsetX||0);stage.dataset.offsetY=String(scene.offsetY||0);
  app.querySelector('.game-shell')?.classList.toggle('rich-wide',layout==='landscape'&&richWideIds.has(currentToy));
- if(changed){stage.dataset.layout=layout;stage.innerHTML=scene.art;}
+ if(changed){stage.dataset.layout=layout;replaceKeepingFocus(stage,scene.art);}
 }
 window.addEventListener('resize',responsiveStage);
 window.visualViewport?.addEventListener('resize',responsiveStage);

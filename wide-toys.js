@@ -1,6 +1,7 @@
 // Responsive wide companion compositions for source-grounded play activities.
 // Entirely original art. Interactive objects share the same state as portrait.
 import {C,colors} from './toys.js';
+import {geometryPiece,pawnArt,cookingAppliance,cookingStatus} from './portrait-toys.js';
 const e=str=>String(str).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 const r=(x,y,w,h,color,rad=14,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rad}" fill="${color}" ${extra}/>`;
 const c=(x,y,rad,color,extra='')=>`<circle cx="${x}" cy="${y}" r="${rad}" fill="${color}" ${extra}/>`;
@@ -36,23 +37,39 @@ function cooking(s){
    `<ellipse cx="479" cy="447" rx="108" ry="73" fill="#f2e2c3"/>`+
    s.ingredients.slice(-8).map((v,i)=>meal(v,430+i*16,436+(i%2)*24,.43)).join('')+
    a(`guest:${s.guest}`,671,106,134,103,r(671,106,134,103,C.paper,34)+meal(s.craving,738,158,.8),'See dinner guest request')+
-   pill(75,453,173,'Kitchen','scene')+pill(706,453,181,'Serve','serve',C.sun);
+   pill(75,453,173,'Kitchen','scene')+pill(706,453,181,'Serve','serve',C.sun)+
+    (s.rejected?t(480,536,'Perhaps cook something first?',20,'#8e4739'):s.served?t(480,536,'A happy guest had a meal!',20,C.ink):'')+
+    (s.served?[0,1,2].map(i=>c(430+i*48,411-(i%2)*17,8,C.coral)).join(''):'');
  }
- return base('#f6e7d6')+
-  r(35,87,890,132,'#dfa080',20)+
-  [0,1,2].map(i=>a(`cupboard:${i}`,56+i*295,104,267,104,
-   r(56+i*295,104,268,104,s.cupboards[i]?'#b98a6a':'#f6d1af',12)+
-   r(75+i*295,118,230,75,s.cupboards[i]?'#8c624d':'#f4bc9a',9)+c(284+i*295,156,9,C.ink),`Open cupboard ${i+1}`)).join('')+
-  r(39,240,884,251,'#b3cac5',30)+
-  a('water',55,265,213,189,r(71,271,185,169,C.paper,20)+c(162,364,68,s.water?C.blue:'#d5e7e8')+
-    p('M130 334 V289 H190 V325','none',`stroke="${C.ink}" stroke-width="9"`),'Fill the kitchen sink')+
-  c(608,356,146,C.ink)+c(608,356,119,'#839e9a')+c(608,356,96,s.heat?'#f3b66e':'#f8dcae')+
-  s.ingredients.slice(-8).map((v,i)=>meal(v,571+(i%4)*24,333+Math.floor(i/4)*39,.4)).join('')+
-  a('stir',752,255,128,169,p('M811 258 L757 409','none',`stroke="#765c4c" stroke-width="14"`)+c(745,422,28,C.ink),'Stir the pot')+
-  [0,1,2,3].map(i=>a(`ingredient:${i}`,37+i*151,434,137,66,r(38+i*151,438,130,59,C.paper,16)+meal(i,75+i*151,466,.6)+t(126+i*151,469,['Pea','Carrot','Tomato','Spice'][i],14),`Add ingredient ${i+1}`)).join('')+
-  pill(675,453,214,'Dinner table','scene')+
-  pill(360,452,191,s.heat?'Turn heat off':'Heat on','heat',s.heat?C.coral:C.paper);
+  return base('#f6e7d6')+
+   [0,1,2].map(i=>pill(55+i*190,144,174,['Pot','Blender','Oven'][i],`appliance:${i}`,s.appliance===i?C.teal:C.paper)).join('')+
+   [0,1,2].map(i=>a(`cupboard:${i}`,55+i*190,204,174,52,r(55+i*190,204,174,31,s.cupboards[i]?'#8e6655':'#eab194',12)+c(206+i*190,219,5,C.ink),`Open cupboard ${i+1}`)).join('')+
+   r(40,239,880,260,'#b5c8c3',24)+
+   a('water',60,269,145,141,c(133,335,61,s.water?C.blue:C.paper)+p('M109 313 V278 H151 V310','none',`stroke="${C.ink}" stroke-width="8"`),'Fill or empty water')+
+   `<g transform="translate(507 351) scale(.9)">${cookingAppliance(s)}</g>`+
+   a('process',391,238,237,214,r(391,238,237,214,'transparent'),'Stir, blend or bake')+
+   pill(239,438,150,s.heat?'Heat on':'Heat off','heat',s.heat?C.coral:C.paper)+
+   pill(400,438,170,s.prepared?'Chopped':'Chop','prepare',s.prepared?C.sun:C.paper)+
+   t(491,514,cookingStatus(s),19)+
+   [0,1,2,3].map(i=>a(`ingredient:${i}`,685+(i%2)*113,251+Math.floor(i/2)*99,100,88,r(685+(i%2)*113,251+Math.floor(i/2)*99,100,88,C.paper,17)+meal(i,735+(i%2)*113,289+Math.floor(i/2)*99,.7)+t(735+(i%2)*113,323+Math.floor(i/2)*99,['Pea','Carrot','Tomato','Spice'][i],13),`Add ingredient ${i+1}`)).join('')+
+   pill(55,438,167,'Fresh bowl','fresh')+pill(677,438,219,'Dinner table','scene');
 }
+function drawing(s){
+ return base('#fffef9')+r(92,78,776,346,'#fffaf0',24,`stroke="${C.sand}" stroke-width="3"`)+
+ `<g data-ink="true" transform="translate(92 78) scale(${776/960} ${346/600})">`+s.strokes.map(line=>`<path d="${line.points.map((pt,i)=>`${i?'L':'M'}${pt[0]} ${pt[1]}`).join(' ')}" fill="none" stroke="${colors[line.c%6]}" stroke-width="${line.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')+
+ '</g>'+colors.map((col,i)=>a(`color:${i}`,94+i*90,435,76,76,c(132+i*90,473,30,col)+ (s.color===i?c(132+i*90,473,36,'none',`stroke="${C.ink}" stroke-width="3"`):''),`Choose drawing color ${i+1}`)).join('')+
+ pill(658,445,103,'Brush','size')+c(712,519,s.width/2,C.ink)+pill(773,445,103,'Undo','undo');
+}
+function geometry(s){
+ return base('#e9eff0')+Array.from({length:5},(_,i)=>Array.from({length:12},(_,j)=>c(84+j*70,120+i*75,3,'#bacbcb')).join('')).join('')+
+ s.pieces.map((obj,i)=>drag(`piece:${i}`,obj.x,Math.min(375,obj.y),geometryPiece(obj,i,s.selected===i),`Select and move shape ${i+1}`)).join('')+
+ ['Add','Turn','Color','Arrange','Mix','Discard'].map((label,i)=>pill(45+i*146,449,135,label,['add','rotate','paint','preset','randomize','discard'][i])).join('');
+}
+function pawn(s){
+ return base('#e9efe4')+r(128,86,439,430,'#fffbf2',30)+`<g transform="translate(345 252) scale(.85)">${pawnArt(s)}</g>`+
+ ['Skin','Body','Eyes','Hat','Color'].map((label,i)=>pill(628,102+i*82,211,label,['face','body','eyes','head','outfit'][i])).join('');
+}
+
 function factory(s){
  const workerX=114+(s.robot%6)*123;
  const levers=s.commands.slice(0,4).map((v,i)=>a(`director:${i}`,95+i*200,279,177,89,
@@ -82,7 +99,7 @@ function phonics(s){
   pieces+pill(526,453,313,'Another word','word');
 }
 export function renderWideToy(id,s){
- const match={cooking,'code-factory':factory,phonics}[id];
+ const match={drawing,geometry,'pawn-maker':pawn,cooking,'code-factory':factory,phonics}[id];
  return match?{art:match(s),rich:true}:null;
 }
-export const richWideIds=new Set(['cooking','code-factory','phonics']);
+export const richWideIds=new Set(['drawing','geometry','pawn-maker','cooking','code-factory','phonics']);

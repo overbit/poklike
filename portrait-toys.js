@@ -40,7 +40,7 @@ function drawing(s){
  const marks=s.strokes.map(line=>{const pts=line.points.map(toPortrait);return `<path d="${pts.map((p,i)=>`${i?'L':'M'} ${n(p.x)} ${n(p.y)}`).join(' ')}" fill="none" stroke="${colors[line.c%6]}" stroke-width="${n(line.w*.7)}" stroke-linecap="round" stroke-linejoin="round"/>`;}).join('');
  const palette=colors.map((col,i)=>circleButton(`color:${i}`,73+i*67,766,col,`Choose drawing color ${i+1}`,s.color===i?c(73+i*67,766,34,'none',`stroke="${C.ink}" stroke-width="3"`):'')).join('');
  return decorated('#fffdfa',r(18,101,444,627,'#fffaf0',19,`stroke="#e8dccb" stroke-width="2"`)+marks+
- r(0,724,480,116,'#f5eee0',0)+palette+action('undo',340,116,112,57,r(340,116,112,57,'#f4e4ce',18)+t(396,145,'Undo',20),'Undo last mark')+action('size',32,116,112,57,r(32,116,112,57,'#e8eceb',18)+t(88,145,'Brush',20),'Change brush size'));
+ r(0,724,480,116,'#f5eee0',0)+palette+action('undo',340,116,112,57,r(340,116,112,57,'#f4e4ce',18)+t(396,145,'Undo',20),'Undo last mark')+action('size',32,116,112,57,r(32,116,112,57,'#e8eceb',18)+t(82,145,'Brush',20)+c(127,145,s.width*.35,C.ink),'Change brush size'));
 }
 function board(s){
  const ready=s.switches[0]&&s.switches[1];
@@ -292,7 +292,7 @@ function shapes(s){
  const spin=s.phase%8;
  return decorated('#f8f6ec',title('Play with shapes')+
   [0,1,2,3,4].map((i)=>action('spin',25+(i%2)*214,187+Math.floor(i/2)*165,206,138,
-  `<g transform="translate(${116+(i%2)*214} ${252+Math.floor(i/2)*165}) rotate(${spin*12+i*19})">${i%3===0?c(0,0,50,colors[i]):i%3===1?r(-49,-50,98,100,colors[i],16):path('M0 -57 L53 35 L-55 35 Z',colors[i])}</g>`, 'Spin shape')).join('')+
+  `<g transform="translate(${116+(i%2)*214} ${252+Math.floor(i/2)*165}) rotate(${spin*12+i*19})">${(i+s.form)%3===0?c(0,0,50,colors[(i+s.form)%6]):(i+s.form)%3===1?r(-49,-50,98,100,colors[(i+s.form)%6],16):path('M0 -57 L53 35 L-55 35 Z',colors[(i+s.form)%6])}</g>`, 'Spin shape')).join('')+
   pill(263,687,183,'New forms','form'));
 }
 function dress(s){
@@ -381,7 +381,7 @@ function puzzle(s){
 }
 function dinos(s){
  const at=toPortrait(s.dino),hatch=s.egg%4;
- return decorated('#e5f0dc',title('A prehistoric afternoon')+
+ return decorated(s.weather?'#cadce7':'#e5f0dc',title(s.weather?'A rainy afternoon':'A prehistoric afternoon')+
  c(344,210,60,C.sun)+bush(100,464,1.7)+bush(347,470,1.3)+
  drag('dino',Math.min(385,Math.max(96,at.x)),Math.min(656,at.y+105),
   path('M-91 21 Q-107 -61 -32 -72 Q26 -129 77 -48 L91 36 L56 55 L-47 55 Z',C.teal)+
@@ -405,11 +405,18 @@ function shops(s){
   r(71,657,338,67,C.paper,20)+t(237,691,`${s.basket.length} little finds`,24)+
   pill(91,741,298,'Next shop','shop'));
 }
+export function geometryPiece(obj,i,selected){
+ const col=colors[(obj.c??i)%6];
+ return (selected?c(0,0,62,'none',`stroke="${C.ink}" stroke-width="3" stroke-dasharray="5 7"`):'')+
+ `<g transform="rotate(${obj.r||0})">${i%3===0?r(-43,-43,86,86,col,12):i%3===1?path('M0 -52 L51 40 L-51 40 Z',col):path('M-46 -43 H0 V0 H46 V43 H-46 Z',col)}${c(-21,-22,7,'rgba(255,255,255,.45)')}</g>`;
+}
 function geometry(s){
  return decorated('#e9eff0',title('Build, move and arrange')+
-  Array.from({length:6},(_,i)=>Array.from({length:7},(_,j)=>c(42+j*66,175+i*85,3,'#bacbcb')).join('')).join('')+
-  s.pieces.map((obj,i)=>{const at=toPortrait(obj);return drag(`piece:${i}`,Math.max(63,Math.min(410,at.x)),Math.min(697,at.y+104),i%3===0?c(0,0,47,colors[i]):i%3===1?r(-48,-48,96,96,colors[i],12):path('M0 -56 L56 48 L-55 48 Z',colors[i]),'Move geometric shape');}).join('')+
-  pill(84,738,313,'Mix new shapes','randomize'));
+ Array.from({length:5},(_,i)=>Array.from({length:7},(_,j)=>c(42+j*66,190+i*88,3,'#bacbcb')).join('')).join('')+
+ s.pieces.map((obj,i)=>{const at=toPortrait(obj);return drag(`piece:${i}`,Math.max(63,Math.min(410,at.x)),Math.min(590,at.y+104),geometryPiece(obj,i,s.selected===i),`Select and move shape ${i+1}`);}).join('')+
+ t(240,647,s.pieces.length?'Move a shape to choose it':'Add a shape to begin',17,C.muted)+
+ pill(22,675,137,'Add','add')+pill(171,675,137,'Turn','rotate')+pill(320,675,137,'Color','paint')+
+ pill(22,752,137,'Arrange','preset')+pill(171,752,137,'Mix','randomize')+pill(320,752,137,'Discard','discard'));
 }
 function space(s){
  const at=toPortrait(s.rocket);
@@ -440,13 +447,18 @@ function phonics(s){
   (finished?t(240,690,'You found the sounds!',22,C.teal):t(240,680,'Drag the sounds to their boxes',18,C.muted))+
   pill(90,735,300,'Another word','word'));
 }
+export function pawnArt(s){
+ const skin=['#edbe88','#d5a075','#ab7959','#85594c'][s.face%4],col=colors[s.outfit%6];
+ const body=[r(-82,75,164,180,col,50),path('M-65 75 H65 L106 252 H-106 Z',col),r(-95,75,190,155,col,23)+r(-83,217,61,57,col,15)+r(22,217,61,57,col,15)][s.body%3];
+ const eyes=[c(-30,-8,7,C.ink)+c(30,-8,7,C.ink),path('M-44 -7 Q-30 -26 -16 -7 M16 -7 Q30 -26 44 -7','none',`stroke="${C.ink}" stroke-width="6" stroke-linecap="round"`),c(-31,-8,17,C.paper)+c(31,-8,17,C.paper)+c(-27,-7,7,C.ink)+c(35,-7,7,C.ink)][s.eyes%3];
+ const hat=s.head%3===1?r(-112,-87,224,20,C.sun,9)+r(-71,-150,142,70,C.sun,22):s.head%3===2?path('M-104 -83 Q-60 -168 27 -133 Q93 -120 98 -83 Z',C.teal)+r(-103,-90,230,19,C.teal,8):'';
+ return body+r(-115,87,32,108,skin,16)+r(83,87,32,108,skin,16)+c(0,0,103,skin)+eyes+path('M-28 37 Q0 62 28 37','none',`stroke="${C.ink}" stroke-width="5" stroke-linecap="round"`)+hat;
+}
 function pawn(s){
- const skin=['#edbe88','#d5a075','#ab7959','#85594c'][s.face%4];
- return decorated('#e9efe4',title('A new little friend')+
-  r(86,174,306,527,'#fffbf2',28)+r(148,460,183,211,colors[s.body%6],60)+
-  c(239,362,113,skin)+face(240,360,2)+
-  (s.head%3?path('M145 324 Q162 231 240 236 Q322 232 335 324',C.ink):'')+
-  pill(23,739,138,'Face','face')+pill(170,739,138,'Clothes','body')+pill(318,739,138,'Eyes','eyes'));
+ return decorated('#e9efe4',title('A new little friend')+r(57,170,366,459,'#fffbf2',30)+
+ `<g transform="translate(240 347) scale(.88)">${pawnArt(s)}</g>`+
+ pill(22,652,137,'Skin','face')+pill(171,652,137,'Body','body')+pill(320,652,137,'Eyes','eyes')+
+ pill(78,736,151,'Hat','head')+pill(250,736,151,'Color','outfit'));
 }
 const ingredientArt=(id,x,y,size=1)=>{
  const art=[
@@ -492,27 +504,29 @@ function cooking(s){
    action('guest:'+selected,277,198,136,100,r(277,198,136,98,C.paper,32)+ingredientArt(needs[s.craving%4],349,247,.7),'See what this guest would like')+
    pill(24,754,202,'Kitchen','scene',C.paper)+pill(244,754,212,'Serve plate','serve',C.sun));
  }
- // A compact kitchen in portrait: sink, cooker, cupboard and ingredients all
- // remain on the screen together; the pot no longer monopolizes the viewport.
- return decorated('#f7e6d5',title('Experiment in the kitchen')+
-  r(20,160,440,138,'#de8f6f',20)+
-  [0,1,2].map(i=>action(`cupboard:${i}`,34+i*140,174,130,111,
-   r(34+i*140,174,130,108,s.cupboards[i]?'#f5dba5':'#eab194',13)+
-   (s.cupboards[i]?r(54+i*140,188,91,72,'#8e6655',10):r(70+i*140,200,55,61,'#f8d4ac',8))+
-   c(133+i*140,229,7,C.ink),`Open kitchen cupboard ${i+1}`)).join('')+
-  r(29,322,422,306,'#b5c8c3',26)+
-  action('water',40,346,104,162,r(38,344,123,134,C.paper,15)+
-    c(91,412,50,s.water?C.blue:'#d7e8e7')+
-    path('M73 390 V363 H113 V389','none',`stroke="${C.ink}" stroke-width="7" stroke-linecap="round"`)+
-    t(96,492,'Sink',15),'Fill or empty water')+
-  c(297,458,121,C.ink)+c(297,458,99,'#7d999a')+c(297,458,81,s.heat?'#f6bb67':'#f9dfb6')+
-  s.ingredients.slice(-9).map((id,i)=>{const a=i*2.5,rad=25+(i%3)*17;return ingredientArt(id,297+Math.cos(a)*rad,456+Math.sin(a)*rad,.5);}).join('')+
-  action('stir',348,337,101,184,l(415,362,372,500,'#775f50',12)+c(365,518,21,C.ink),'Stir the pot')+
-  action('heat',213,552,173,61,r(213,552,173,60,s.heat?C.coral:C.paper,21)+t(299,582,s.heat?'Heat on':'Heat off',18,s.heat?C.paper:C.ink),'Turn stove heat on or off')+
-  [0,1,2,3].map(i=>action(`ingredient:${i}`,17+i*115,648,105,89,
-   r(17+i*115,648,105,90,C.paper,18)+ingredientArt(i,69+i*115,682,.75)+t(70+i*115,720,['Peas','Carrot','Tomato','Spice'][i],13),`Add ${['peas','carrots','tomato','spice'][i]}`)).join('')+
-  pill(82,754,315,'Back to the table','scene',C.paper));
+  return decorated('#f7e6d5',title('Experiment in the kitchen')+
+   [0,1,2].map(i=>action(`appliance:${i}`,20+i*154,161,137,65,r(20+i*154,161,137,65,s.appliance===i?C.teal:C.paper,18)+t(88+i*154,194,['Pot','Blender','Oven'][i],19,C.ink),`Choose ${['pot','blender','oven'][i]}`)).join('')+
+   [0,1,2].map(i=>action(`cupboard:${i}`,30+i*149,242,124,57,r(30+i*149,242,124,57,s.cupboards[i]?'#8e6655':'#eab194',12)+c(130+i*149,271,6,C.ink),`Open kitchen cupboard ${i+1}`)).join('')+
+   r(22,315,436,290,'#b5c8c3',25)+
+   action('water',36,345,94,105,c(83,391,42,s.water?C.blue:C.paper)+path('M68 370 V346 H98 V367','none',`stroke="${C.ink}" stroke-width="6"`),'Fill or empty water')+
+   `<g transform="translate(294 432)">${cookingAppliance(s)}</g>`+
+   action('process',172,322,260,209,r(172,322,260,209,'transparent',18),'Stir, blend or bake the ingredients')+
+   action('heat',35,538,183,54,r(35,538,183,54,s.heat?C.coral:C.paper,18)+t(126,565,s.heat?'Heat on':'Heat off',19),'Turn heat on or off')+
+   action('prepare',233,538,210,54,r(233,538,210,54,s.prepared?C.sun:C.paper,18)+t(338,565,s.prepared?'Chopped':'Chop ingredients',18),'Chop ingredients')+
+   t(240,626,cookingStatus(s),18,C.ink)+
+   [0,1,2,3].map(i=>action(`ingredient:${i}`,17+i*115,648,105,89,r(17+i*115,648,105,90,C.paper,18)+ingredientArt(i,69+i*115,682,.75)+t(70+i*115,720,['Peas','Carrot','Tomato','Spice'][i],13),`Add ${['peas','carrots','tomato','spice'][i]}`)).join('')+
+   pill(22,754,141,'Fresh bowl','fresh')+pill(178,754,280,'Back to the table','scene'));
 }
+export const cookingStatus=s=>!s.ingredients.length?'Choose something delicious':s.mixed?'A colorful blend!':s.cooked?'Warm and ready to share':s.prepared?'Chopped into little pieces':'Fresh ingredients';
+export function cookingAppliance(s){
+ const meal=s.ingredients.slice(-12).map((id,i)=>{const a=i*2.4+s.stir*.5,rad=20+(i%3)*20;return ingredientArt(id,Math.cos(a)*rad,Math.sin(a)*rad,s.prepared?.3:.5);}).join('');
+ const steam=s.cooked?[0,1,2].map(i=>path(`M${-38+i*38} -83 q-15 -20 0 -39`,'none',`stroke="${C.paper}" stroke-width="6" stroke-linecap="round"`)).join(''):'';
+ const swirl=path(`M-42 0 Q0 ${s.stir%2?42:-42} 42 0`,'none',`stroke="${C.paper}" stroke-width="5" opacity=".7"`);
+ if(s.appliance===1)return r(-76,-105,152,154,'#e5f3ec',18,`stroke="${C.ink}" stroke-width="5"`)+r(-83,45,166,37,C.teal,12)+(s.mixed?r(-65,-55,130,92,C.coral,12)+swirl:meal)+r(-83,-117,166,22,C.ink,9)+c(0,63,10,C.sun);
+ if(s.appliance===2)return r(-111,-95,222,178,C.coral,22)+r(-91,-64,182,119,s.cooked?'#b77049':C.ink,12)+r(-67,-50,134,95,'#ebc89c',12)+meal+l(-68,-76,68,-76,C.paper,7)+steam;
+ return c(0,0,106,C.ink)+c(0,0,87,s.cooked?'#e5a25f':'#f9dfb6')+(s.mixed?c(0,0,74,C.coral):meal)+swirl+l(75,-105,42,-13,'#775f50',11,`transform="rotate(${s.stir*12} 0 0)"`)+steam;
+}
+
 function factory(s){
  // Continuous factory loop with directable machines and crates, rather than a
  // static programming worksheet. Observable flow; detailed parity is pending.

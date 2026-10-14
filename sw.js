@@ -1,6 +1,6 @@
 // Entirely local once installed. New cache becomes active only after all assets succeed.
-const VERSION='poklike-v8';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./toys.js','./portrait-toys.js','./wide-toys.js','./manifest.webmanifest','./icons/poklike.svg','./icons/poklike-180.png','./icons/poklike-192.png','./icons/poklike-512.png'];
+const VERSION='poklike-v9';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./toys.js','./profile.js','./portrait-toys.js','./wide-toys.js','./manifest.webmanifest','./icons/poklike.svg','./icons/poklike-180.png','./icons/poklike-192.png','./icons/poklike-512.png'];
 const normalize=url=>new URL(url,self.registration.scope).toString();
 self.addEventListener('install',event=>{
  event.waitUntil((async()=>{
