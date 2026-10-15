@@ -1,4 +1,4 @@
-import {toys,ids,toyById,initialState,renderToy,interact,moveDrag,tickToy,C} from './toys.js';
+import {toys,ids,toyById,initialState,renderToy,interact,moveDrag,tickToy,marblePosition,C} from './toys.js';
 import {renderPortraitToy,toModel,toPortrait,portraitDragToModel,PORTRAIT_DRAG_LIFT} from './portrait-toys.js';
 import {renderWideToy,richWideIds} from './wide-toys.js';
 import {AGE_BANDS,INTERESTS,normalizeProfile,recommendedToyIds} from './profile.js';
@@ -407,8 +407,32 @@ window.addEventListener('resize',responsiveStage);
 window.visualViewport?.addEventListener('resize',responsiveStage);
 window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPrompt=ev;document.querySelector('#install-button')?.classList.add('available');});
 window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySelector('#install-button')?.classList.remove('available');});
+// The marble uses frame time and one persistent SVG element. Replacing the whole
+// scene every 350ms makes it jump, especially on tall portrait screens.
+let marbleFrameTime=0,marbleLastSave=0;
+const MARBLE_STEPS=140,MARBLE_GAP=14,MARBLE_RATE=18;
+function animateMarble(now){
+ const dt=marbleFrameTime?Math.min(64,now-marbleFrameTime):0;
+ marbleFrameTime=now;
+ if(currentToy==='marble-machine'&&!gestures.size){
+  const state=loadState('marble-machine');
+  if(state.running&&dt)state.marble=(state.marble+dt*MARBLE_RATE/1000)%(MARBLE_STEPS+MARBLE_GAP);
+  const stage=app.querySelector('[data-stage]'),ball=stage?.querySelector('[data-marble-ball]');
+  if(ball&&state.running){
+   if(state.marble>=MARBLE_STEPS)ball.setAttribute('visibility','hidden');
+   else{
+    ball.removeAttribute('visibility');
+    const position=marblePosition(state.marble,isPortraitPlay()?'portrait':'landscape');
+    ball.setAttribute('transform',`translate(${position.x.toFixed(2)} ${position.y.toFixed(2)})`);
+   }
+  }
+  if(state.running&&now-marbleLastSave>1800){save();marbleLastSave=now;}
+ }
+ requestAnimationFrame(animateMarble);
+}
+requestAnimationFrame(animateMarble);
 setInterval(()=>{
- if(!currentToy||gestures.size||preferences.reducedMotion&&['shapes'].includes(currentToy))return;
+ if(!currentToy||currentToy==='marble-machine'||gestures.size||preferences.reducedMotion&&['shapes'].includes(currentToy))return;
  const st=loadState(currentToy),notes=tickToy(currentToy,st);
  if(notes!==null){if(notes.length&&preferences.sound)notes.forEach((f,i)=>setTimeout(()=>sound(f,.18),i*65));updateStage();}
 },350);

@@ -292,3 +292,13 @@ test('marble advances smoothly, pauses, resumes and resets',()=>{
  assert.equal(state.marble,13);
  interact('marble-machine',state,'marble');assert.equal(state.marble,0);
 });
+
+test('portrait rolling motion supports sub-step positions for smooth frame updates',()=>{
+ const a=marblePosition(25,'portrait'),b=marblePosition(25.1,'portrait'),c=marblePosition(25.2,'portrait');
+ assert.ok(Math.hypot(b.x-a.x,b.y-a.y)>0.01);
+ assert.ok(Math.hypot(b.x-a.x,b.y-a.y)<5);
+ assert.ok(Math.hypot(c.x-b.x,c.y-b.y)<5);
+ const markup=renderPortraitToy('marble-machine',initialState('marble-machine')).art;
+ assert.match(markup,/data-marble-track="true"/);
+ assert.match(markup,/data-marble-ball="true"/);
+});

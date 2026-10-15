@@ -142,6 +142,24 @@ async function run(){
   const audit=await evaluate(`(()=>{const scene=document.querySelector('[data-stage]'),targets=[...scene.querySelectorAll('[data-act],[data-drag]')];const box=scene.getBoundingClientRect(),view=scene.viewBox.baseVal;return {ratioOK:Math.abs(view.width/view.height-box.width/box.height)<.004,interactive:targets.length,inside:targets.some(el=>{const r=el.getBoundingClientRect();return r.width>=28&&r.height>=28&&r.x<innerWidth-20&&r.right>20&&r.y<innerHeight-50&&r.bottom>90})}})()`);
   verify(audit.ratioOK&&audit.interactive>0&&audit.inside,`${toy.title} portrait scene is interactive without horizontal camera controls`);
  }
+
+ await evaluate(`location.hash='#/toy/marble-machine'`);
+ await until(`document.querySelector('[data-stage]')?.dataset.stage==='marble-machine'`,'portrait marble machine');
+ await evaluate(`document.querySelector('[data-reset]').click()`);
+ verify(await evaluate(`JSON.parse(localStorage.getItem('poklike-state-v1'))['marble-machine'].running===true`),'marble starts running after resetting earlier test actions');
+ const marbleStart=await evaluate(`(()=>{const e=document.querySelector('[data-marble-ball]');return e?.getAttribute('transform')})()`);
+ await until(`document.querySelector('[data-marble-ball]')?.getAttribute('transform')!==${JSON.stringify(marbleStart)}`,'marble animation frame',35);
+ const marbleNext=await evaluate(`document.querySelector('[data-marble-ball]')?.getAttribute('transform')`);
+ verify(marbleStart!==marbleNext,'portrait marble animates independently of the coarse timer');
+ const trackError=await evaluate(`(()=>{const s=document.querySelector('[data-stage]'),line=s.querySelector('[data-marble-track]'),ball=s.querySelector('[data-marble-ball]'),m=ball.transform.baseVal.consolidate().matrix;let best=1e6;for(let d=0;d<line.getTotalLength();d+=2){const p=line.getPointAtLength(d);best=Math.min(best,Math.hypot(p.x-m.e,p.y-m.f));}return best})()`);
+ verify(trackError<3,'moving marble stays centered on its visible portrait track');
+ await evaluate(`document.querySelector('[data-act="run"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
+ await wait(90);
+ const marblePaused=await evaluate(`document.querySelector('[data-marble-ball]').getAttribute('transform')`);
+ await wait(170);
+ verify(await evaluate(`document.querySelector('[data-marble-ball]').getAttribute('transform')`)===marblePaused,'pause freezes rolling marble');
+ await snapshot('marble-portrait');
+
  await evaluate(`location.hash='#/toy/cooking'`);
  await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'cooking portrait actions');
  const guests=await evaluate(`(()=>{const before=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking;document.querySelector('[data-act="guest:1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));const after=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking;return after.guest===1})()`);
