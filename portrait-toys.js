@@ -1,6 +1,6 @@
 // Original portrait compositions for small screens. Coordinates are in a 480x840
 // toy world; draggable state and drawing strokes still use the 960x600 model.
-import {C,colors} from './toys.js';
+import {C,colors,marblePosition} from './toys.js';
 
 export const PORTRAIT={width:480,height:840};
 export const toPortrait=({x,y})=>({x:x/2,y:y*1.4});
@@ -316,12 +316,12 @@ function blocks(s){
   l(0,685,480,685,'#967960',7)+shapes+pill(45,741,181,'Add block','add')+pill(248,741,188,'Scatter','scatter'));
 }
 function marble(s){
- const marX=76+(s.marble%70)*4.5;
+ const ball=marblePosition(s.marble,'portrait');
  return decorated('#fff6e7',title('A rolling experiment')+
   path('M54 210 H425 V265 H125 V319 H410 V382 H73 V446 H401 V507 H112 V584 H425','none',`stroke="${C.ink}" stroke-width="35" stroke-linejoin="round" stroke-linecap="round"`)+
   path('M54 210 H425 V265 H125 V319 H410 V382 H73 V446 H401 V507 H112 V584 H425','none',`stroke="${C.blue}" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"`)+
   s.valves.map((open,i)=>action(`valve:${i}`,28+i*140,618,120,97,c(86+i*140,668,41,open?C.teal:C.coral)+l(86+i*140,644,86+i*140,693,C.paper,9,`transform="rotate(${open?90:0} ${86+i*140} 668)"`),`Turn valve ${i+1}`)).join('')+
-  c(Math.min(405,marX),s.marble%2?253:214,19,C.sun)+c(Math.min(405,marX)-6,s.marble%2?248:209,5,C.paper)+
+  c(ball.x,ball.y,19,C.sun)+c(ball.x-6,ball.y-5,5,C.paper)+
   pill(87,736,306,s.running?'Pause marbles':'Roll marbles','run'));
 }
 function sequence(s){
