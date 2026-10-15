@@ -75,7 +75,7 @@ async function run(){
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
- const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v9');return (await c.keys()).length})()`);
+ const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v10');return (await c.keys()).length})()`);
  verify(cached>=13,'all original and responsive assets are precached');
  verify(await evaluate(`document.querySelector('.toy-card.featured svg')?.querySelectorAll('path[stroke]').length>=5`),'empty Drawing gallery thumbnail shows original sample artwork without saving');
  await snapshot('collection-desktop');
@@ -144,6 +144,24 @@ async function run(){
  }
  await evaluate(`location.hash='#/toy/cooking'`);
  await until(`document.querySelector('[data-stage]')?.dataset.stage==='cooking'`,'cooking portrait actions');
+ // The moving ball must actually remain on the painted portrait rail.
+ const measureMarble=()=>evaluate(`(()=>{const stage=document.querySelector('[data-stage]'),track=stage?.querySelector('[data-marble-track]'),ball=stage?.querySelector('[data-marble]');if(!track||!ball)return null;const m=ball.transform.baseVal.consolidate()?.matrix;if(!m)return null;const length=track.getTotalLength();let nearest=Infinity;for(let i=0;i<=600;i++){const p=track.getPointAtLength(length*i/600);nearest=Math.min(nearest,Math.hypot(p.x-m.e,p.y-m.f));}return {x:m.e,y:m.f,nearest};})()`);
+ await evaluate(`location.hash='#/toy/marble-machine'`);
+ await until(`document.querySelector('[data-stage]')?.dataset.stage==='marble-machine'&&document.querySelector('[data-stage]')?.dataset.layout==='portrait'`,'portrait marble scene');
+ await wait(120);
+ const ballBefore=await measureMarble();await wait(190);const ballAfter=await measureMarble();
+ verify(ballBefore&&ballAfter&&ballBefore.nearest<4&&ballAfter.nearest<4,'portrait ball rolls directly on the drawn rail');
+ const displacement=Math.hypot(ballAfter.x-ballBefore.x,ballAfter.y-ballBefore.y);
+ verify(displacement>8&&displacement<90,'rolling motion is continuous without jumps between rows');
+ await evaluate(`document.querySelector('[data-stage] [data-act="run"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
+ await until(`document.querySelector('[data-stage] [data-act="run"]')?.getAttribute('aria-label')==='Roll marbles'`,'marble pause state');
+ const paused=await measureMarble();await wait(260);const stationary=await measureMarble();
+ verify(Math.hypot(paused.x-stationary.x,paused.y-stationary.y)<.1,'pause freezes the ball in its current track position');
+ await evaluate(`document.querySelector('[data-stage] [data-act="run"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
+ await wait(200);
+ const resumed=await measureMarble();
+ verify(resumed.nearest<4&&Math.hypot(resumed.x-stationary.x,resumed.y-stationary.y)>8,'resuming continues along the same rail');
+ await snapshot('marble-machine-portrait');
  const guests=await evaluate(`(()=>{const before=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking;document.querySelector('[data-act="guest:1"]').dispatchEvent(new MouseEvent('click',{bubbles:true}));const after=JSON.parse(localStorage.getItem('poklike-state-v1')).cooking;return after.guest===1})()`);
  verify(guests,'Cooking starts with interactive dinner guests');
  await evaluate(`document.querySelector('[data-act="scene"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);

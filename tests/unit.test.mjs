@@ -46,7 +46,27 @@ test('world puzzle snaps close enough tiles into intended slot',()=>{
  assert.equal(s.tiles[0].x,244);assert.equal(s.tiles[0].y,151);
 });
 
-import {renderPortraitToy,portraitFrame,toPortrait,toModel,portraitDragToModel,PORTRAIT_DRAG_LIFT} from '../portrait-toys.js';
+import {renderPortraitToy,portraitFrame,toPortrait,toModel,portraitDragToModel,PORTRAIT_DRAG_LIFT,marblePoint,MARBLE_TRACK_PATH,MARBLE_TRACK_LENGTH} from '../portrait-toys.js';
+test('portrait marble rolls continuously along the painted rails',()=>{
+ const s=initialState('marble-machine'),scene=renderPortraitToy('marble-machine',s).art;
+ assert.ok(MARBLE_TRACK_LENGTH>1250&&MARBLE_TRACK_LENGTH<2000);
+ assert.match(scene,/data-marble-track/);assert.match(scene,/data-marble/);
+ assert.ok(scene.includes(MARBLE_TRACK_PATH));
+ assert.deepEqual([marblePoint(0).x,marblePoint(0).y],[62,208]);
+ const samples=Array.from({length:280},(_,i)=>marblePoint(i/4));
+ for(let i=0;i<samples.length;i++){
+  const point=samples[i];
+  assert.ok(Number.isFinite(point.x)&&Number.isFinite(point.y)&&Number.isFinite(point.angle));
+  assert.ok(point.x>=50&&point.x<=440&&point.y>=190&&point.y<=610);
+  if(i)assert.ok(Math.hypot(point.x-samples[i-1].x,point.y-samples[i-1].y)<12,'ball jumped at '+i);
+ }
+ assert.ok(marblePoint(69.9).opacity<.1,'exiting marble should fade before the next one enters');
+ assert.deepEqual(marblePoint(70),marblePoint(0));
+ interact('marble-machine',s,'run');assert.equal(s.running,false);
+ assert.equal(tickToy('marble-machine',s),null);
+ assert.match(renderPortraitToy('marble-machine',s).art,/Roll marbles/);
+});
+
 for(const toy of toys){
  test(`${toy.title} has a portrait scene with direct interactive targets`,()=>{
   const art=renderPortraitToy(toy.id,initialState(toy.id));

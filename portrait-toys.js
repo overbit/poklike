@@ -315,15 +315,51 @@ function blocks(s){
  return decorated('#e8efec',title('Anything can be a tower')+r(0,687,480,133,'#d6c4a6',0)+
   l(0,685,480,685,'#967960',7)+shapes+pill(45,741,181,'Add block','add')+pill(248,741,188,'Scatter','scatter'));
 }
-function marble(s){
- const marX=76+(s.marble%70)*4.5;
- return decorated('#fff6e7',title('A rolling experiment')+
-  path('M54 210 H425 V265 H125 V319 H410 V382 H73 V446 H401 V507 H112 V584 H425','none',`stroke="${C.ink}" stroke-width="35" stroke-linejoin="round" stroke-linecap="round"`)+
-  path('M54 210 H425 V265 H125 V319 H410 V382 H73 V446 H401 V507 H112 V584 H425','none',`stroke="${C.blue}" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"`)+
-  s.valves.map((open,i)=>action(`valve:${i}`,28+i*140,618,120,97,c(86+i*140,668,41,open?C.teal:C.coral)+l(86+i*140,644,86+i*140,693,C.paper,9,`transform="rotate(${open?90:0} ${86+i*140} 668)"`),`Turn valve ${i+1}`)).join('')+
-  c(Math.min(405,marX),s.marble%2?253:214,19,C.sun)+c(Math.min(405,marX)-6,s.marble%2?248:209,5,C.paper)+
-  pill(87,736,306,s.running?'Pause marbles':'Roll marbles','run'));
+// A single geometry source drives both rails and the rolling ball.
+const MARBLE_CURVE=[
+ ['M',62,208],['L',395,232],['Q',432,235,416,263],['Q',407,281,385,285],
+ ['L',105,313],['Q',69,316,78,344],['Q',86,361,106,362],
+ ['L',389,386],['Q',428,393,414,419],['Q',408,438,383,441],
+ ['L',105,467],['Q',70,472,78,500],['Q',83,520,108,522],
+ ['L',393,553],['Q',425,558,421,578],['L',407,591]
+];
+export const MARBLE_TRACK_PATH=MARBLE_CURVE.map(([command,...numbers])=>command+numbers.join(' ')).join(' ');
+const marbleSamples=[{x:MARBLE_CURVE[0][1],y:MARBLE_CURVE[0][2],distance:0}];
+for(const [command,...points] of MARBLE_CURVE.slice(1)){
+ const start=marbleSamples.at(-1),steps=command==='Q'?32:1;
+ for(let step=1;step<=steps;step++){
+  const fraction=step/steps,remaining=1-fraction;
+  const x=command==='Q'?remaining*remaining*start.x+2*remaining*fraction*points[0]+fraction*fraction*points[2]:start.x+(points[0]-start.x)*fraction;
+  const y=command==='Q'?remaining*remaining*start.y+2*remaining*fraction*points[1]+fraction*fraction*points[3]:start.y+(points[1]-start.y)*fraction;
+  const previous=marbleSamples.at(-1);
+  marbleSamples.push({x,y,distance:previous.distance+Math.hypot(x-previous.x,y-previous.y)});
+ }
 }
+export const MARBLE_TRACK_LENGTH=marbleSamples.at(-1).distance;
+export function marblePoint(progress){
+ const phase=((Number.isFinite(progress)?progress:0)%70+70)%70/70;
+ const target=phase*MARBLE_TRACK_LENGTH;
+ let low=0,high=marbleSamples.length-1;
+ while(low<high){const mid=(low+high)>>1;if(marbleSamples[mid].distance<target)low=mid+1;else high=mid;}
+ const next=marbleSamples[low],previous=marbleSamples[Math.max(0,low-1)];
+ const fraction=next.distance===previous.distance?0:(target-previous.distance)/(next.distance-previous.distance);
+ return {x:previous.x+(next.x-previous.x)*fraction,y:previous.y+(next.y-previous.y)*fraction,
+  angle:phase*MARBLE_TRACK_LENGTH/18*180/Math.PI,opacity:Math.max(0,Math.min(1,(1-phase)/.025))};
+}
+function marble(s){
+ const point=marblePoint(s.marble);
+ const ball=`<g data-marble transform="translate(${n(point.x)} ${n(point.y)}) rotate(${n(point.angle)})" opacity="${n(point.opacity)}">`+
+  c(0,0,17,C.sun,`stroke="${C.ink}" stroke-width="3"`)+
+  path('M-10 -7 Q0 -14 10 -7','none',`stroke="${C.paper}" stroke-width="3" stroke-linecap="round"`)+
+  c(-5,-5,3,C.paper)+'</g>';
+ return decorated('#fff6e7',title('A rolling experiment')+
+  path(MARBLE_TRACK_PATH,'none',`data-marble-track stroke="${C.ink}" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"`)+
+  path(MARBLE_TRACK_PATH,'none',`stroke="${C.blue}" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"`)+
+  c(62,208,27,C.leaf)+c(407,591,27,C.teal)+
+  s.valves.map((open,i)=>action(`valve:${i}`,28+i*140,618,120,97,c(86+i*140,668,41,open?C.teal:C.coral)+l(86+i*140,644,86+i*140,693,C.paper,9,`transform="rotate(${open?90:0} ${86+i*140} 668)"`),`Turn valve ${i+1}`)).join('')+
+  ball+pill(87,736,306,s.running?'Pause marbles':'Roll marbles','run'));
+}
+
 function sequence(s){
  // The four tracks wrap into a phone-friendly 4x8 grid, rather than eight tiny columns.
  const top=180,left=37,cell=103,rowH=68;

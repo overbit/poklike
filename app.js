@@ -1,5 +1,5 @@
 import {toys,ids,toyById,initialState,renderToy,interact,moveDrag,tickToy,C} from './toys.js';
-import {renderPortraitToy,toModel,toPortrait,portraitDragToModel,PORTRAIT_DRAG_LIFT} from './portrait-toys.js';
+import {renderPortraitToy,toModel,toPortrait,portraitDragToModel,PORTRAIT_DRAG_LIFT,marblePoint} from './portrait-toys.js';
 import {renderWideToy,richWideIds} from './wide-toys.js';
 import {AGE_BANDS,INTERESTS,normalizeProfile,recommendedToyIds} from './profile.js';
 
@@ -18,6 +18,7 @@ preferences.reducedMotion=preferences.reducedMotion===true;
 let offline={phase:'loading',message:'Preparing offline play…'};
 let currentToy=null,ctx=null,installPrompt=null,visited=new Set();
 const gestures=new Map();
+let marbleFrame=0,previousMarbleFrame=0,lastMarbleSave=0;
 let sliderIgnoreClickUntil=0;
 const safeId=id=>ids.has(id)?id:null;
 const boundedNumber=(value,fallback,min=-9999,max=9999)=>typeof value==='number'&&Number.isFinite(value)?Math.max(min,Math.min(max,value)):fallback;
@@ -125,6 +126,30 @@ function stageMarkup(id){
  const scene=buildScene(id),portrait=isPortraitPlay();
  return `<svg class="toy-canvas" data-stage="${id}" data-layout="${portrait?'portrait':'landscape'}" data-offset-x="${scene.offsetX||0}" data-offset-y="${scene.offsetY||0}" xmlns="http://www.w3.org/2000/svg" viewBox="${scene.viewBox}" preserveAspectRatio="xMidYMid meet" aria-label="Interactive ${escapeHtml(toyById(id).title)} play area" role="group">${scene.art}</svg>`;
 }
+// Animate one ball in place: the 350ms game ticker must not rebuild it.
+function animateMarble(now){
+ marbleFrame=0;
+ if(currentToy!=='marble-machine'||!isPortraitPlay()){previousMarbleFrame=0;return;}
+ const state=loadState('marble-machine');
+ if(!state.running){previousMarbleFrame=0;return;}
+ const elapsed=previousMarbleFrame?Math.max(0,Math.min(now-previousMarbleFrame,60)):0;
+ previousMarbleFrame=now;
+ state.marble=(state.marble+elapsed*3/350)%70;
+ const ball=app.querySelector('[data-stage] [data-marble]');
+ if(ball){
+  const point=marblePoint(state.marble);
+  ball.setAttribute('transform',`translate(${point.x.toFixed(2)} ${point.y.toFixed(2)}) rotate(${point.angle.toFixed(2)})`);
+  ball.setAttribute('opacity',point.opacity.toFixed(3));
+ }
+ if(now-lastMarbleSave>1500){save();lastMarbleSave=now;}
+ marbleFrame=requestAnimationFrame(animateMarble);
+}
+function startMarbleMotion(){
+ if(currentToy==='marble-machine'&&isPortraitPlay()&&!marbleFrame&&loadState('marble-machine').running){
+  previousMarbleFrame=0;
+  marbleFrame=requestAnimationFrame(animateMarble);
+ }
+}
 function showToy(id){
  id=safeId(id);if(!id){location.hash='#/';return;}
  currentToy=id;gestures.clear();visited.add(id);document.body.classList.add('playing');
@@ -142,6 +167,7 @@ function showToy(id){
  stage.addEventListener('pointerup',pointerUp);
  stage.addEventListener('pointercancel',pointerUp);
  requestAnimationFrame(responsiveStage);
+ startMarbleMotion();
 }
 function replaceKeepingFocus(container,html){
  const active=document.activeElement,keys=['data-slider','data-drag','data-act'];
@@ -166,6 +192,7 @@ function handleAction(action){
  const scene=renderToy(currentToy,st);
  const controls=app.querySelector('.play-controls');
  if(controls)replaceKeepingFocus(controls,scene.tools.map(t=>`<button class="play-control" data-act="${escapeHtml(t.act)}">${escapeHtml(t.label)}</button>`).join(''));
+ startMarbleMotion();
 }
 function point(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
@@ -402,6 +429,7 @@ function responsiveStage(){
  stage.dataset.offsetX=String(scene.offsetX||0);stage.dataset.offsetY=String(scene.offsetY||0);
  app.querySelector('.game-shell')?.classList.toggle('rich-wide',layout==='landscape'&&richWideIds.has(currentToy));
  if(changed){stage.dataset.layout=layout;replaceKeepingFocus(stage,scene.art);}
+ startMarbleMotion();
 }
 window.addEventListener('resize',responsiveStage);
 window.visualViewport?.addEventListener('resize',responsiveStage);
@@ -409,6 +437,7 @@ window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPr
 window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySelector('#install-button')?.classList.remove('available');});
 setInterval(()=>{
  if(!currentToy||gestures.size||preferences.reducedMotion&&['shapes'].includes(currentToy))return;
+ if(currentToy==='marble-machine'&&isPortraitPlay())return;
  const st=loadState(currentToy),notes=tickToy(currentToy,st);
  if(notes!==null){if(notes.length&&preferences.sound)notes.forEach((f,i)=>setTimeout(()=>sound(f,.18),i*65));updateStage();}
 },350);
