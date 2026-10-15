@@ -145,6 +145,8 @@ async function run(){
 
  await evaluate(`location.hash='#/toy/marble-machine'`);
  await until(`document.querySelector('[data-stage]')?.dataset.stage==='marble-machine'`,'portrait marble machine');
+ await evaluate(`document.querySelector('[data-reset]').click()`);
+ verify(await evaluate(`JSON.parse(localStorage.getItem('poklike-state-v1'))['marble-machine'].running===true`),'marble starts running after resetting earlier test actions');
  const marbleStart=await evaluate(`(()=>{const e=document.querySelector('[data-marble-ball]');return e?.getAttribute('transform')})()`);
  await until(`document.querySelector('[data-marble-ball]')?.getAttribute('transform')!==${JSON.stringify(marbleStart)}`,'marble animation frame',35);
  const marbleNext=await evaluate(`document.querySelector('[data-marble-ball]')?.getAttribute('transform')`);
