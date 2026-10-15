@@ -215,11 +215,12 @@ export function renderToy(id,s){
  }
  case 'marble-machine':{
   const px=[125,255,405,515,645,785,835],py=[125,215,150,310,360,230,480];
+  const ball=marblePosition(s.marble,'landscape');
   art=bg('#f5f8f5')+Array.from({length:15},(_,i)=>L(35+i*65,70,35+i*65,535,'#e0e8e3',2)).join('')+
     `<path d="M125 125 L255 215 L405 150 L515 310 L645 360 L785 230 L835 480" fill="none" stroke="${C.sun}" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>`+
     `<path d="M125 125 L255 215 L405 150 L515 310 L645 360 L785 230 L835 480" fill="none" stroke="${C.paper}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>`+
     [1,3,5].map((j,i)=>hit(`valve:${i}`,`${O(px[j],py[j],38,s.valves[i]?C.teal:C.coral)}${L(px[j]-22,py[j],px[j]+22,py[j],C.paper,7)}`,`Turn valve ${i+1}`)).join('')+
-    O(px[(Math.floor(s.marble/10))%7]||125,py[(Math.floor(s.marble/10))%7]||125,18,C.blue,`stroke="${C.ink}" stroke-width="3"`)+
+    O(ball.x,ball.y,18,C.blue,`stroke="${C.ink}" stroke-width="3"`)+
     R(715,493,165,58,C.teal,14)+T(797,522,s.running?'ROLLING':'PAUSED',22,C.paper);
   break;
  }
@@ -504,10 +505,29 @@ export function moveDrag(id,s,key,x,y,layout='wide'){
  return false;
 }
 // Returns notes to synthesize when a running music activity advances.
+// Use the exact visible track centerlines for smooth, distance-based rolling.
+export const marbleTracks=Object.freeze({
+ portrait:[[54,210],[425,210],[425,265],[125,265],[125,319],[410,319],[410,382],[73,382],[73,446],[401,446],[401,507],[112,507],[112,584],[425,584]],
+ landscape:[[125,125],[255,215],[405,150],[515,310],[645,360],[785,230],[835,480]]
+});
+export function marblePosition(step,layout='landscape'){
+ const pts=marbleTracks[layout]||marbleTracks.landscape;
+ const lengths=pts.slice(1).map(([x,y],i)=>Math.hypot(x-pts[i][0],y-pts[i][1]));
+ const total=lengths.reduce((a,b)=>a+b,0);
+ let remaining=((Number(step)||0)%140+140)%140/140*total;
+ for(let i=0;i<lengths.length;i++){
+  if(remaining<=lengths[i]||i===lengths.length-1){
+   const t=Math.min(1,remaining/lengths[i]);
+   return {x:pts[i][0]+(pts[i+1][0]-pts[i][0])*t,y:pts[i][1]+(pts[i+1][1]-pts[i][1])*t};
+  }
+  remaining-=lengths[i];
+ }
+ return {x:pts[0][0],y:pts[0][1]};
+}
 export function tickToy(id,s){
  if(id==='sequencer'&&s.playing){s.beat=(s.beat+1)%8;return s.steps.flatMap((row,i)=>row[s.beat]?[220,330,440,550][i]:[]);}
  if(id==='radio'&&s.playing){s.turn++;return [[262,330,392,440],[220,277,330,370],[330,392,440,523],[262,349,392,494]][s.station%4].slice(s.turn%4,s.turn%4+1).map(f=>f*(s.volume?1:0));}
- if(id==='marble-machine'&&s.running){s.marble=(s.marble+3)%70;return [];}
+ if(id==='marble-machine'&&s.running){s.marble=(s.marble+1)%140;return [];}
  if(id==='code-factory'&&s.playing){s.robot=(s.robot+1)%6;return s.robot===0?[220+s.commands[0]*110]:[];}
  return null;
 }

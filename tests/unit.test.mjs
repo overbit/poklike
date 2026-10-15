@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {toys,ids,allToyIds,initialState,renderToy,interact,moveDrag,tickToy} from '../toys.js';
+import {toys,ids,allToyIds,initialState,renderToy,interact,moveDrag,tickToy,marblePosition,marbleTracks} from '../toys.js';
 
 test('exactly 25 unique real activities in official inventory',()=>{
  assert.equal(toys.length,25);assert.equal(ids.size,25);
@@ -262,4 +262,33 @@ test('save sanitizer preserves bounded new model fields and accepts old saves',(
  const pawn=sandbox.sanitize('pawn-maker',{eyes:2,head:2,outfit:5});assert.equal(pawn.eyes,2);assert.equal(pawn.outfit,5);
  const bad=sandbox.sanitize('geometry',{pieces:Array(30).fill({x:Infinity,y:NaN,c:999,r:-30}),selected:Infinity});assert.equal(bad.pieces.length,12);for(const p of bad.pieces)assert.ok(Object.values(p).every(Number.isFinite));
  for(const id of ['geometry','pawn-maker','cooking'])for(const input of [null,[],{appliance:Infinity,eyes:-900,head:NaN}])for(const art of composedArt(id,sandbox.sanitize(id,input)))assert.ok(!art.includes('NaN'));
+});
+
+test('marble stays on its centerline without teleporting in either orientation',()=>{
+ for(const layout of ['portrait','landscape']){
+  const track=marbleTracks[layout];
+  for(let step=0;step<140;step++){
+   const p=marblePosition(step,layout);
+   const gap=Math.min(...track.slice(1).map(([bx,by],i)=>{
+    const [ax,ay]=track[i],dx=bx-ax,dy=by-ay;
+    const fraction=Math.max(0,Math.min(1,((p.x-ax)*dx+(p.y-ay)*dy)/(dx*dx+dy*dy)));
+    return Math.hypot(p.x-ax-dx*fraction,p.y-ay-dy*fraction);
+   }));
+   assert.ok(gap<1e-7,layout+' step '+step+' drifted by '+gap);
+   if(step>0){
+    const prev=marblePosition(step-1,layout);
+    assert.ok(Math.hypot(p.x-prev.x,p.y-prev.y)<30,layout+' teleported at '+step);
+   }
+  }
+ }
+});
+test('marble advances smoothly, pauses, resumes and resets',()=>{
+ const state=initialState('marble-machine');
+ for(let i=0;i<12;i++)tickToy('marble-machine',state);
+ assert.equal(state.marble,12);
+ interact('marble-machine',state,'run');tickToy('marble-machine',state);
+ assert.equal(state.marble,12);
+ interact('marble-machine',state,'run');tickToy('marble-machine',state);
+ assert.equal(state.marble,13);
+ interact('marble-machine',state,'marble');assert.equal(state.marble,0);
 });
