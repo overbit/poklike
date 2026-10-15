@@ -418,7 +418,7 @@ function animateMarble(now){
   const state=loadState('marble-machine');
   if(state.running&&dt)state.marble=(state.marble+dt*MARBLE_RATE/1000)%(MARBLE_STEPS+MARBLE_GAP);
   const stage=app.querySelector('[data-stage]'),ball=stage?.querySelector('[data-marble-ball]');
-  if(ball){
+  if(ball&&state.running){
    if(state.marble>=MARBLE_STEPS)ball.setAttribute('visibility','hidden');
    else{
     ball.removeAttribute('visibility');
