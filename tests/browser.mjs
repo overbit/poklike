@@ -146,9 +146,9 @@ async function run(){
  await evaluate(`location.hash='#/toy/marble-machine'`);
  await until(`document.querySelector('[data-stage]')?.dataset.stage==='marble-machine'`,'portrait marble machine');
  const marbleStart=await evaluate(`(()=>{const e=document.querySelector('[data-marble-ball]');return e?.getAttribute('transform')})()`);
- await wait(100);
- const marbleNext=await evaluate(`(()=>{const e=document.querySelector('[data-marble-ball]');return e?.getAttribute('transform')})()`);
- verify(marbleStart!==marbleNext,'portrait marble moves between 350ms timer ticks');
+ await until(`document.querySelector('[data-marble-ball]')?.getAttribute('transform')!==${JSON.stringify(marbleStart)}`,'marble animation frame',35);
+ const marbleNext=await evaluate(`document.querySelector('[data-marble-ball]')?.getAttribute('transform')`);
+ verify(marbleStart!==marbleNext,'portrait marble animates independently of the coarse timer');
  const trackError=await evaluate(`(()=>{const s=document.querySelector('[data-stage]'),line=s.querySelector('[data-marble-track]'),ball=s.querySelector('[data-marble-ball]'),m=ball.transform.baseVal.consolidate().matrix;let best=1e6;for(let d=0;d<line.getTotalLength();d+=2){const p=line.getPointAtLength(d);best=Math.min(best,Math.hypot(p.x-m.e,p.y-m.f));}return best})()`);
  verify(trackError<3,'moving marble stays centered on its visible portrait track');
  await evaluate(`document.querySelector('[data-act="run"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
