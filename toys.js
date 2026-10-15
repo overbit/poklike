@@ -220,7 +220,7 @@ export function renderToy(id,s){
     `<path d="M125 125 L255 215 L405 150 L515 310 L645 360 L785 230 L835 480" fill="none" stroke="${C.sun}" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>`+
     `<path d="M125 125 L255 215 L405 150 L515 310 L645 360 L785 230 L835 480" fill="none" stroke="${C.paper}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>`+
     [1,3,5].map((j,i)=>hit(`valve:${i}`,`${O(px[j],py[j],38,s.valves[i]?C.teal:C.coral)}${L(px[j]-22,py[j],px[j]+22,py[j],C.paper,7)}`,`Turn valve ${i+1}`)).join('')+
-    O(ball.x,ball.y,18,C.blue,`stroke="${C.ink}" stroke-width="3"`)+
+    `<g data-marble-ball="true" transform="translate(${v(ball.x)} ${v(ball.y)})">${O(0,0,18,C.blue,`stroke="${C.ink}" stroke-width="3"`)}</g>`+
     R(715,493,165,58,C.teal,14)+T(797,522,s.running?'ROLLING':'PAUSED',22,C.paper);
   break;
  }

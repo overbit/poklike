@@ -319,9 +319,9 @@ function marble(s){
  const ball=marblePosition(s.marble,'portrait');
  return decorated('#fff6e7',title('A rolling experiment')+
   path('M54 210 H425 V265 H125 V319 H410 V382 H73 V446 H401 V507 H112 V584 H425','none',`stroke="${C.ink}" stroke-width="35" stroke-linejoin="round" stroke-linecap="round"`)+
-  path('M54 210 H425 V265 H125 V319 H410 V382 H73 V446 H401 V507 H112 V584 H425','none',`stroke="${C.blue}" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"`)+
+  path('M54 210 H425 V265 H125 V319 H410 V382 H73 V446 H401 V507 H112 V584 H425','none',`data-marble-track="true" stroke="${C.blue}" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"`)+
   s.valves.map((open,i)=>action(`valve:${i}`,28+i*140,618,120,97,c(86+i*140,668,41,open?C.teal:C.coral)+l(86+i*140,644,86+i*140,693,C.paper,9,`transform="rotate(${open?90:0} ${86+i*140} 668)"`),`Turn valve ${i+1}`)).join('')+
-  c(ball.x,ball.y,19,C.sun)+c(ball.x-6,ball.y-5,5,C.paper)+
+  `<g data-marble-ball="true" transform="translate(${n(ball.x)} ${n(ball.y)})">${c(0,0,19,C.sun)}${c(-6,-5,5,C.paper)}</g>`+
   pill(87,736,306,s.running?'Pause marbles':'Roll marbles','run'));
 }
 function sequence(s){
