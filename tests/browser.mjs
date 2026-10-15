@@ -152,6 +152,7 @@ async function run(){
  const trackError=await evaluate(`(()=>{const s=document.querySelector('[data-stage]'),line=s.querySelector('[data-marble-track]'),ball=s.querySelector('[data-marble-ball]'),m=ball.transform.baseVal.consolidate().matrix;let best=1e6;for(let d=0;d<line.getTotalLength();d+=2){const p=line.getPointAtLength(d);best=Math.min(best,Math.hypot(p.x-m.e,p.y-m.f));}return best})()`);
  verify(trackError<3,'moving marble stays centered on its visible portrait track');
  await evaluate(`document.querySelector('[data-act="run"]').dispatchEvent(new MouseEvent('click',{bubbles:true}))`);
+ await wait(90);
  const marblePaused=await evaluate(`document.querySelector('[data-marble-ball]').getAttribute('transform')`);
  await wait(170);
  verify(await evaluate(`document.querySelector('[data-marble-ball]').getAttribute('transform')`)===marblePaused,'pause freezes rolling marble');
