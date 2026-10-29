@@ -239,7 +239,7 @@ async function run(){
   // verify suggestions appear with profile enabled
   verify(await evaluate(`document.querySelector('[data-recommendation]')!==null`),'suggestions appear offline with profile');
   // verify profile.js is cached
-  const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v9');return (await c.keys()).some(r=>r.url.includes('profile.js'))})()`);
+  const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v10');return (await c.keys()).some(r=>r.url.includes('profile.js'))})()`);
   verify(cached,'profile.js is cached in v9');
   verify(errors.length===0,'no uncaught browser exceptions: '+errors.join(', '));
   verify(requests.length===0,'no HTTP 500 responses: '+requests.join(', '));

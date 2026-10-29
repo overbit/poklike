@@ -507,7 +507,18 @@ export function moveDrag(id,s,key,x,y,layout='wide'){
 // Returns notes to synthesize when a running music activity advances.
 // Use the exact visible track centerlines for smooth, distance-based rolling.
 export const marbleTracks=Object.freeze({
- portrait:[[54,210],[425,210],[425,265],[125,265],[125,319],[410,319],[410,382],[73,382],[73,446],[401,446],[401,507],[112,507],[112,584],[425,584]],
+ portrait:(()=>{
+  const points=[[54,208]];let from=points[0];
+  for(const [kind,...coords] of [["L",387,237],["C",445,243,444,279,390,288],["L",145,319],["C",97,325,94,361,147,370],["L",384,399],["C",437,405,434,443,385,452],["L",150,482],["C",102,488,101,525,150,534],["L",402,566]]){
+   if(kind==='L'){from=coords;points.push(coords);continue;}
+   for(let i=1;i<=32;i++){
+    const t=i/32,k=1-t;
+    points.push([k**3*from[0]+3*k*k*t*coords[0]+3*k*t*t*coords[2]+t**3*coords[4],k**3*from[1]+3*k*k*t*coords[1]+3*k*t*t*coords[3]+t**3*coords[5]]);
+   }
+   from=coords.slice(4,6);
+  }
+  return points;
+ })(),
  landscape:[[125,125],[255,215],[405,150],[515,310],[645,360],[785,230],[835,480]]
 });
 export function marblePosition(step,layout='landscape'){

@@ -410,7 +410,7 @@ window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySel
 // The marble uses frame time and one persistent SVG element. Replacing the whole
 // scene every 350ms makes it jump, especially on tall portrait screens.
 let marbleFrameTime=0,marbleLastSave=0;
-const MARBLE_STEPS=140,MARBLE_GAP=14,MARBLE_RATE=18;
+const MARBLE_STEPS=140,MARBLE_GAP=14,MARBLE_RATE=9;
 function animateMarble(now){
  const dt=marbleFrameTime?Math.min(64,now-marbleFrameTime):0;
  marbleFrameTime=now;
@@ -424,6 +424,7 @@ function animateMarble(now){
     ball.removeAttribute('visibility');
     const position=marblePosition(state.marble,isPortraitPlay()?'portrait':'landscape');
     ball.setAttribute('transform',`translate(${position.x.toFixed(2)} ${position.y.toFixed(2)})`);
+    ball.querySelector('[data-marble-spin]')?.setAttribute('transform',`rotate(${(state.marble*84).toFixed(2)})`);
    }
   }
   if(state.running&&now-marbleLastSave>1800){save();marbleLastSave=now;}

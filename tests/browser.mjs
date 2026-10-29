@@ -75,7 +75,7 @@ async function run(){
  await until(`document.querySelector('.connection-status')?.textContent.includes('Ready offline')`,'offline status',100);
  const status=await evaluate(`document.querySelector('.connection-status').textContent.trim()`);
  verify(status==='Ready offline','offline status is confirmed by service worker');
- const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v9');return (await c.keys()).length})()`);
+ const cached=await evaluate(`(async()=>{const c=await caches.open('poklike-v10');return (await c.keys()).length})()`);
  verify(cached>=13,'all original and responsive assets are precached');
  verify(await evaluate(`document.querySelector('.toy-card.featured svg')?.querySelectorAll('path[stroke]').length>=5`),'empty Drawing gallery thumbnail shows original sample artwork without saving');
  await snapshot('collection-desktop');
