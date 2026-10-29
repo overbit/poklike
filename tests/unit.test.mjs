@@ -302,3 +302,23 @@ test('portrait rolling motion supports sub-step positions for smooth frame updat
  assert.match(markup,/data-marble-track="true"/);
  assert.match(markup,/data-marble-ball="true"/);
 });
+
+test('portrait marble follows a descending rounded rail through every bend',()=>{
+ const track=marbleTracks.portrait;
+ assert.ok(track.length>100);
+ for(let i=1;i<track.length;i++)assert.ok(track[i][1]>=track[i-1][1]-.001,'no uphill jumps');
+ const start=marblePosition(0,'portrait'),end=marblePosition(139.95,'portrait');
+ assert.ok(end.y-start.y>330);
+ for(let step=.3;step<139.5;step+=.25){
+  const a=marblePosition(step-.15,'portrait'),b=marblePosition(step,'portrait'),c=marblePosition(step+.15,'portrait');
+  const first=Math.atan2(b.y-a.y,b.x-a.x),next=Math.atan2(c.y-b.y,c.x-b.x);
+  const change=Math.abs(Math.atan2(Math.sin(next-first),Math.cos(next-first)));
+  assert.ok(change<.35,'abrupt turn at '+step);
+  assert.ok(Math.hypot(b.x-a.x,b.y-a.y)<2.1,'frame jump at '+step);
+ }
+ const markup=renderPortraitToy('marble-machine',initialState('marble-machine')).art;
+ assert.match(markup,/d="M54 208 L 387 237 C/);
+ assert.match(markup,/data-marble-spin="true"/);
+ const gap=renderPortraitToy('marble-machine',{...initialState('marble-machine'),marble:143}).art;
+ assert.match(gap,/data-marble-ball="true"[^>]*visibility="hidden"/);
+});
