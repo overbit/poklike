@@ -19,11 +19,14 @@ jobs:
           node-version: '22'
       - name: Run unit tests
         run: npm test
-      - name: Find installed Chromium or Chrome
-        run: |
-          BROWSER=$(command -v chromium || command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser)
-          test -n "$BROWSER"
-          echo "CHROMIUM=$BROWSER" >> "$GITHUB_ENV"
+      - name: Install browser for deterministic CI
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+          install-dependencies: true
+      - name: Select installed Chrome
+        run: echo "CHROMIUM=${{ steps.chrome.outputs.chrome-path }}" >> "$GITHUB_ENV"
       - name: Run offline Chromium browser tests
         run: timeout --signal=TERM 150s npm run test:browser
       - name: Verify offline browser at GitHub Pages subpath
